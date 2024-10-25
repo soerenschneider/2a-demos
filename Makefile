@@ -248,7 +248,7 @@ package-chart-%: lint-chart-%
 
 .PHONY: helm-push
 helm-push: helm-package
-	@if [ ! $(REGISTRY_IS_OCI) ]; then \
+	if [ ! $(REGISTRY_IS_OCI) ]; then \
 	    repo_flag="--repo"; \
 	fi; \
 	for chart in $(CHARTS_PACKAGE_DIR)/*.tgz; do \
