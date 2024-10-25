@@ -24,7 +24,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push charts to GHCR
-        run: REGISTRY_REPO="oci://ghcr.io/Schnitzel/2a-demo/charts" make helm-push
+        run: REGISTRY_REPO="oci://ghcr.io/schnitzel/2a-demo/charts" make helm-push
 
       - name: Prepare manifests
         run: make hmc-dist-release
