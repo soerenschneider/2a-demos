@@ -1,0 +1,18 @@
+kubeconfig
+charts/
+bin
+
+# ditors
+.idea
+*.swp
+*.swo
+*~
+
+# Vendoring directory
+vendor
+
+# mkdocs folder
+mkdocs
+
+credentials/ca
+credentials/platform-engineer

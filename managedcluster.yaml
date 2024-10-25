@@ -1,0 +1,16 @@
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ManagedCluster
+metadata:
+  name: aws-hosted
+spec:
+  template: aws-hosted-cp
+  config:
+    vpcID: "vpc-0b25b6bf20bc8c10a"
+    region: "us-west-1"
+    subnets:
+      - id: "subnet-00e14b3a1145e8b09"
+        availabilityZone: "us-west-1b"
+    amiID: ami-0bf2d31c356e4cb25
+    instanceType: t3.medium
+    securityGroupIDs:
+      - "sg-076933e503e134005"

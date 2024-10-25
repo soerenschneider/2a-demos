@@ -1,0 +1,20 @@
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ManagedCluster
+metadata:
+  name: 2a-demo2
+  namespace: hmc-system
+spec:
+  template: aws-standalone-cp-0-1-0
+  credential: aws-cluster-identity-cred
+  config:
+    clusterIdentity:
+      name: aws-cluster-identity
+      namespace: hmc-system
+    region: us-west-1
+    publicIP: true
+    controlPlaneNumber: 3
+    workersNumber: 3
+    controlPlane:
+      instanceType: t3.xlarge
+    worker:
+      instanceType: t3.xlarge

@@ -1,0 +1,20 @@
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ManagedCluster
+metadata:
+  name: ${NAMESPACE}-azure-${CLUSTERNAME}
+  namespace: ${NAMESPACE}
+spec:
+  template: azure-standalone-cp-0-1-0
+  credential: azure-cluster-identity-cred
+  config:
+    controlPlaneNumber: 1
+    workersNumber: 2
+    location: "westus"
+    subscriptionID: 827ac6be-1c0a-47d7-a218-01d387fcf9f1
+    controlPlane:
+      vmSize: Standard_A4_v2
+    worker:
+      vmSize: Standard_A4_v2
+    clusterIdentity:
+      name: azure-cluster-identity
+      namespace: hmc-system

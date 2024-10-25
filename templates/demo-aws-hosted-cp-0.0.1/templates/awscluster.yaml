@@ -1,0 +1,28 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSCluster
+metadata:
+  name: {{ include "cluster.name" . }}
+  annotations:
+    cluster.x-k8s.io/managed-by: k0smotron
+    aws.cluster.x-k8s.io/external-resource-gc: "true"
+  finalizers:
+  - hmc.mirantis.com/cleanup
+spec:
+  region: {{ .Values.region }}
+  identityRef:
+    kind: {{ .Values.clusterIdentity.kind }}
+    name: {{ .Values.clusterIdentity.name }}
+  network:
+    vpc:
+      id: {{ .Values.vpcID }}
+    {{- with .Values.subnets }}
+    subnets:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- if not (quote .Values.sshKeyName | empty) }}
+  sshKeyName: {{ .Values.sshKeyName | quote }}
+  {{- end }}
+  {{- with .Values.bastion }}
+  bastion:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
