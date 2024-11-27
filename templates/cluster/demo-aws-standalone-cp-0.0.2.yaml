@@ -1,0 +1,39 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmChart
+metadata:
+  name: demo-aws-standalone-cp-0.0.2
+  namespace: hmc-system
+  labels:
+    hmc.mirantis.com/managed: "true"
+spec:
+  interval: 5m0s
+  chart: demo-aws-standalone-cp
+  reconcileStrategy: ChartVersion
+  sourceRef:
+    kind: HelmRepository
+    name: 2a-demos
+  version: 0.0.2
+---
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ClusterTemplate
+metadata:
+  name: demo-aws-standalone-cp-0.0.2
+  namespace: hmc-system
+spec:
+  helm:
+    chartRef:
+      kind: HelmChart
+      name: demo-aws-standalone-cp-0.0.2
+      namespace: hmc-system
+---
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ClusterTemplateChain
+metadata:
+  name: demo-aws-standalone-cp-0.0.2
+  namespace: hmc-system
+spec:
+  supportedTemplates:
+    - name: demo-aws-standalone-cp-0.0.1
+      availableUpgrades:
+        - name: demo-aws-standalone-cp-0.0.2
+    - name: demo-aws-standalone-cp-0.0.2

@@ -1,0 +1,39 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmChart
+metadata:
+  name: demo-ingress-nginx-4.11.3
+  namespace: hmc-system
+  labels:
+    hmc.mirantis.com/managed: "true"
+spec:
+  interval: 5m0s
+  chart: demo-ingress-nginx
+  reconcileStrategy: ChartVersion
+  sourceRef:
+    kind: HelmRepository
+    name: 2a-demos
+  version: 4.11.3
+---
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ServiceTemplate
+metadata:
+  name: demo-ingress-nginx-4.11.3
+  namespace: hmc-system
+spec:
+  helm:
+    chartRef:
+      kind: HelmChart
+      name: demo-ingress-nginx-4.11.3
+      namespace: hmc-system
+---
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ServiceTemplateChain
+metadata:
+  name: demo-ingress-nginx-4.11.3
+  namespace: hmc-system
+spec:
+  supportedTemplates:
+    - name: demo-ingress-nginx-4.11.0
+      availableUpgrades:
+        - name: demo-ingress-nginx-4.11.3
+    - name: demo-ingress-nginx-4.11.3

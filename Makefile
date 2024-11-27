@@ -17,6 +17,7 @@ HELM ?= $(LOCALBIN)/helm-$(HELM_VERSION)
 HELM_VERSION ?= v3.15.1
 
 TEMPLATES_DIR := templates
+TEMPLATE_FOLDERS = $(patsubst $(TEMPLATES_DIR)/%,%,$(wildcard $(TEMPLATES_DIR)/*))
 CHARTS_PACKAGE_DIR ?= $(LOCALBIN)/charts
 $(CHARTS_PACKAGE_DIR): | $(LOCALBIN)
 	rm -rf $(CHARTS_PACKAGE_DIR)
@@ -26,6 +27,31 @@ REGISTRY_PORT ?= 5001
 REGISTRY_REPO ?= oci://127.0.0.1:$(REGISTRY_PORT)/charts
 REGISTRY_IS_OCI = $(shell echo $(REGISTRY_REPO) | grep -q oci && echo true || echo false)
 
+# install-template will install a given template
+# $1 - yaml file
+define install-template
+	kubectl apply -f $(1)
+endef
+
+.PHONY: install-clustertemplate-demo-aws-standalone-cp-0.0.1
+install-clustertemplate-demo-aws-standalone-cp-0.0.1:
+	$(call install-template,templates/cluster/demo-aws-standalone-cp-0.0.1.yaml)
+
+.PHONY: install-clustertemplate-demo-aws-standalone-cp-0.0.2
+install-clustertemplate-demo-aws-standalone-cp-0.0.2:
+	$(call install-template,templates/cluster/demo-aws-standalone-cp-0.0.2.yaml)
+
+.PHONY: install-servicetemplate-demo-ingress-nginx-4.11.0
+install-servicetemplate-demo-ingress-nginx-4.11.0:
+	$(call install-template,templates/service/demo-ingress-nginx-4.11.0.yaml)
+
+.PHONY: install-servicetemplate-demo-ingress-nginx-4.11.3
+install-servicetemplate-demo-ingress-nginx-4.11.3:
+	$(call install-template,templates/service/demo-ingress-nginx-4.11.3.yaml)
+
+.PHONY: install-servicetemplate-demo-kyverno-3.2.6
+install-servicetemplate-demo-kyverno-3.2.6:
+	$(call install-template,templates/service/demo-kyverno-3.2.6.yaml)
 
 # apply-managed-cluster-yaml will apply a given cluster yaml
 # $1 - target namespace
@@ -120,30 +146,13 @@ apply-global-kyverno:
 	KUBECTL_EXTERNAL_DIFF="diff --color -N -u" kubectl -n $(HMC_NAMESPACE) diff -f MultiClusterServices/1-kyverno.yaml || true
 	kubectl -n $(HMC_NAMESPACE) apply -f MultiClusterServices/1-kyverno.yaml
 
-# copy-clustertemplate will copy a clustertemplate from one namespace into another
-# $1 - source namespace
-# $2 - target namespace
-# $3 - templatename
-define copy-clustertemplate
-	@kubectl -n $(2) get clustertemplate $(3) > /dev/null 2>&1 && echo "Template $(3) already approved in namespace $(2)" || kubectl -n $(1) get clustertemplate $(3) -o json | jq 'del(.metadata["namespace"])' | kubectl -n $(2) apply -f -
-endef
+.PHONY: approve-templatechain-aws-standalone-cp-0.0.1
+approve-templatechain-aws-standalone-cp-0.0.1:
+	$(call approve-clustertemplatechain,$(TARGET_NAMESPACE),aws-standalone-cp-0.0.1)
 
-.PHONY: approve-template-aws-standalone-cp-0.0.1
-approve-template-aws-standalone-cp-0.0.1:
-	$(call copy-clustertemplate,$(HMC_NAMESPACE),$(TARGET_NAMESPACE),aws-standalone-cp-0-0-1)
-
-.PHONY: approve-template-aws-standalone-cp-0.1.0
-approve-template-aws-standalone-cp-0.1.0:
-	$(call copy-clustertemplate,$(HMC_NAMESPACE),$(TARGET_NAMESPACE),aws-standalone-cp-0-1-0)
-
-.PHONY: approve-template-azure-standalone-cp-0.0.1
-approve-template-azure-standalone-cp-0.0.1:
-	$(call copy-clustertemplate,$(HMC_NAMESPACE),$(TARGET_NAMESPACE),azure-standalone-cp-0-0-1)
-
-.PHONY: approve-template-azure-standalone-cp-0.1.0
-approve-template-azure-standalone-cp-0.1.0:
-	$(call copy-clustertemplate,$(HMC_NAMESPACE),$(TARGET_NAMESPACE),azure-standalone-cp-0-1-0)
-
+.PHONY: approve-templatechain-aws-standalone-cp-0.0.2
+approve-templatechain-aws-standalone-cp-0.0.2:
+	$(call approve-clustertemplatechain,$(TARGET_NAMESPACE),aws-standalone-cp-0.0.2)
 
 # copy-servicetemplate will copy a servicetemplate from one namespace into another
 # $1 - source namespace
@@ -151,6 +160,25 @@ approve-template-azure-standalone-cp-0.1.0:
 # $3 - templatename
 define copy-servicetemplate
 	@kubectl -n $(2) get servicetemplate $(3) > /dev/null 2>&1 && echo "Template $(3) already approved in namespace $(2)" || kubectl -n $(1) get servicetemplate $(3) -o json | jq 'del(.metadata["namespace"])' | kubectl -n $(2) apply -f -
+endef
+
+
+# approve-clustertemplatechain will approve a clustertemplate in a namespace
+# $1 - target namespace
+# $2 - templatename
+define approve-clustertemplatechain
+	kubectl -n hmc-system patch TemplateManagement hmc --type='json' -p='[ \
+		{ \
+			"op": "add", \
+			"path": "/spec/accessRules/-", \
+			"value": { \
+				"clusterTemplateChains": ["$(2)"], \
+				"targetNamespaces": { \
+					"list": ["$(1)"] \
+				} \
+			} \
+		} \
+	]'
 endef
 
 .PHONY: approve-template-nginx-ingress-nginx-4.11.0
@@ -235,16 +263,20 @@ generate-platform-engineer1-kubeconfig: credentials/platform-engineer/platform-e
 
 .PHONY: helm-package
 helm-package: $(CHARTS_PACKAGE_DIR) helm
-	@make $(patsubst %,package-chart-%,$(TEAMPLATES))
+	@make $(patsubst %,package-%-tmpl,$(TEMPLATE_FOLDERS))
 
 TEAMPLATES = $(patsubst $(TEMPLATES_DIR)/%,%,$(wildcard $(TEMPLATES_DIR)/*))
 
 lint-chart-%:
-	$(HELM) dependency update $(TEMPLATES_DIR)/$*
-	$(HELM) lint --strict $(TEMPLATES_DIR)/$*
+	$(HELM) dependency update $(TEMPLATES_SUBDIR)/$*
+	$(HELM) lint --strict $(TEMPLATES_SUBDIR)/$*
+
+package-%-tmpl:
+	@make TEMPLATES_SUBDIR=$(TEMPLATES_DIR)/$* $(patsubst %,package-chart-%,$(shell find $(TEMPLATES_DIR)/$* -mindepth 1 -maxdepth 1 -type d -exec basename {} \;))
+
 
 package-chart-%: lint-chart-%
-	$(HELM) package --destination $(CHARTS_PACKAGE_DIR) $(TEMPLATES_DIR)/$*
+	$(HELM) package --destination $(CHARTS_PACKAGE_DIR) $(TEMPLATES_SUBDIR)/$*
 
 .PHONY: helm-push
 helm-push: helm-package

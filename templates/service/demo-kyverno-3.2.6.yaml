@@ -1,0 +1,36 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmChart
+metadata:
+  name: demo-kyverno-3.2.6
+  namespace: hmc-system
+  labels:
+    hmc.mirantis.com/managed: "true"
+spec:
+  interval: 5m0s
+  chart: demo-kyverno
+  reconcileStrategy: ChartVersion
+  sourceRef:
+    kind: HelmRepository
+    name: 2a-demos
+  version: 4.11.3
+---
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ServiceTemplate
+metadata:
+  name: demo-kyverno-3.2.6
+  namespace: hmc-system
+spec:
+  helm:
+    chartRef:
+      kind: HelmChart
+      name: demo-kyverno-3.2.6
+      namespace: hmc-system
+---
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ServiceTemplateChain
+metadata:
+  name: demo-kyverno-3.2.6
+  namespace: hmc-system
+spec:
+  supportedTemplates:
+    - name: demo-kyverno-3.2.6

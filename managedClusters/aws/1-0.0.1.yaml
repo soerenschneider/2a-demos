@@ -4,7 +4,7 @@ metadata:
   name: ${NAMESPACE}-aws-${CLUSTERNAME}
   namespace: ${NAMESPACE}
 spec:
-  template: aws-standalone-cp-0-0-1
+  template: demo-aws-hosted-cp-0.0.1
   credential: aws-cluster-identity-cred
   config:
     clusterIdentity:
