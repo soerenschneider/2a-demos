@@ -24,4 +24,4 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push charts to GHCR
-        run: REGISTRY_REPO="oci://ghcr.io/${{ github.repository }}/charts" make helm-push
+        run: REGISTRY_REPO="oci://ghcr.io/${GITHUB_REPOSITORY,,}/charts" make helm-push
