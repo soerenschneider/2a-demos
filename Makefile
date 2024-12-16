@@ -1,7 +1,7 @@
 HMC_NAMESPACE ?= hmc-system
 TESTING_NAMESPACE ?= hmc-system
 TARGET_NAMESPACE ?= blue
-KIND_CLUSTER_NAME ?= hmc-dev
+KIND_CLUSTER_NAME ?= kind
 
 
 ENVSUBST ?= $(LOCALBIN)/envsubst-$(ENVSUBST_VERSION)
@@ -26,6 +26,18 @@ $(CHARTS_PACKAGE_DIR): | $(LOCALBIN)
 REGISTRY_PORT ?= 5001
 REGISTRY_REPO ?= oci://127.0.0.1:$(REGISTRY_PORT)/charts
 REGISTRY_IS_OCI = $(shell echo $(REGISTRY_REPO) | grep -q oci && echo true || echo false)
+
+.PHONY: setup-helmrepo
+setup-helmrepo:
+	kubectl apply -f setup/helmRepository.yaml
+
+.PHONY: dev-aws-creds
+setup-aws-creds: envsubst
+	$(ENVSUBST) -no-unset -i setup/aws-credentials.yaml | kubectl apply -f -
+
+.PHONY: dev-azure-creds
+setup-azure-creds: envsubst
+	$(ENVSUBST) -no-unset -i setup/azure-credentials.yaml | kubectl apply -f -
 
 # install-template will install a given template
 # $1 - yaml file
@@ -66,108 +78,137 @@ endef
 
 .PHONY: apply-aws-test1-0.0.1
 apply-aws-test1-0.0.1: envsubst
-	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,aws/1-0.0.1.yaml)
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,managedClusters/aws/0.0.1.yaml)
 
-.PHONY: apply-aws-test1-0.1.0
-apply-aws-test1-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,aws/2-0.1.0.yaml)
+.PHONY: watch-aws-test1
+watch-aws-test1:
+	kubectl get -n hmc-system ManagedCluster.hmc.mirantis.com hmc-system-aws-test1 --watch
 
-.PHONY: apply-aws-test1-ingress-0.1.0
-apply-aws-test1-ingress-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,aws/3-ingress-0.1.0.yaml)
+.PHONY: apply-aws-test1-0.0.1-ingress
+apply-aws-test1-0.0.1-ingress: envsubst
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,managedClusters/aws/0.0.1-ingress.yaml)
 
+.PHONY: get-kubeconfig-aws-test1
+get-kubeconfig-aws-test1:
+	kubectl -n hmc-system get secret hmc-system-aws-test1-kubeconfig -o jsonpath='{.data.value}' | base64 -d > kubeconfigs/hmc-system-aws-test1.kubeconfig
+
+.PHONY: apply-aws-test1-0.0.2
+apply-aws-test1-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,managedClusters/aws/0.0.2.yaml)
+
+.PHONY: apply-aws-test1-0.0.2-ingress
+apply-aws-test1-0.0.2-ingress: envsubst
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,managedClusters/aws/0.0.2-ingress.yaml)
+
+
+.PHONY: apply-aws-test2-0.0.1
+apply-aws-test2-0.0.1: envsubst
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test2,managedClusters/aws/0.0.1.yaml)
+
+.PHONY: watch-aws-test2
+watch-aws-test2:
+	kubectl get -n hmc-system ManagedCluster.hmc.mirantis.com hmc-system-aws-test2 --watch
+
+.PHONY: apply-aws-test2-0.0.1-ingress
+apply-aws-test2-0.0.1-ingress: envsubst
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test2,managedClusters/aws/0.0.1-ingress.yaml)
+
+.PHONY: get-kubeconfig-aws-test2
+get-kubeconfig-aws-test2:
+	kubectl -n hmc-system get secret hmc-system-aws-test2-kubeconfig -o jsonpath='{.data.value}' | base64 -d > kubeconfigs/hmc-system-aws-test2.kubeconfig
+
+.PHONY: apply-aws-test2-0.0.2
+apply-aws-test2-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test2,managedClusters/aws/0.0.2.yaml)
+
+.PHONY: apply-aws-test2-0.0.2-ingress
+apply-aws-test2-0.0.2-ingress: envsubst
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test2,managedClusters/aws/0.0.2-ingress.yaml)
 
 .PHONY: apply-aws-prod1-0.0.1
 apply-aws-prod1-0.0.1: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,aws/1-0.0.1.yaml)
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,managedClusters/aws/1-0.0.1.yaml)
 
-.PHONY: apply-aws-prod1-0.1.0
-apply-aws-prod1-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,aws/2-0.1.0.yaml)
+.PHONY: apply-aws-prod1-0.0.2
+apply-aws-prod1-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,aws/2-0.0.2.yaml)
 
-.PHONY: apply-aws-prod1-ingress-0.1.0
-apply-aws-prod1-ingress-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,aws/3-ingress-0.1.0.yaml)
+.PHONY: apply-aws-prod1-ingress-0.0.2
+apply-aws-prod1-ingress-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,aws/3-ingress-0.0.2.yaml)
 
 
 .PHONY: apply-aws-dev1-0.0.1
 apply-aws-dev1-0.0.1: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,aws/1-0.0.1.yaml)
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,managedClusters/aws/0.0.1.yaml)
 
-.PHONY: apply-aws-dev1-0.1.0
-apply-aws-dev1-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,aws/2-0.1.0.yaml)
+.PHONY: apply-aws-dev1-0.0.2
+apply-aws-dev1-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,aws/2-0.0.2.yaml)
 
-.PHONY: apply-aws-dev1-ingress-0.1.0
-apply-aws-dev1-ingress-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,aws/3-ingress-0.1.0.yaml)
+.PHONY: apply-aws-dev1-ingress-0.0.2
+apply-aws-dev1-ingress-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,aws/3-ingress-0.0.2.yaml)
 
 
 .PHONY: apply-azure-test1-0.0.1
 apply-azure-test1-0.0.1: envsubst
 	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,azure/1-0.0.1.yaml)
 
-.PHONY: apply-azure-test1-0.1.0
-apply-azure-test1-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,azure/2-0.1.0.yaml)
+.PHONY: apply-azure-test1-0.0.2
+apply-azure-test1-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,azure/2-0.0.2.yaml)
 
-.PHONY: apply-azure-test1-ingress-0.1.0
-apply-azure-test1-ingress-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,azure/3-ingress-0.1.0.yaml)
+.PHONY: apply-azure-test1-ingress-0.0.2
+apply-azure-test1-ingress-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,azure/3-ingress-0.0.2.yaml)
 
 
 .PHONY: apply-azure-prod1-0.0.1
 apply-azure-prod1-0.0.1: envsubst
 	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,azure/1-0.0.1.yaml)
 
-.PHONY: apply-azure-prod1-0.1.0
-apply-azure-prod1-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,azure/2-0.1.0.yaml)
+.PHONY: apply-azure-prod1-0.0.2
+apply-azure-prod1-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,azure/2-0.0.2.yaml)
 
-.PHONY: apply-azure-prod1-ingress-0.1.0
-apply-azure-prod1-ingress-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,azure/3-ingress-0.1.0.yaml)
+.PHONY: apply-azure-prod1-ingress-0.0.2
+apply-azure-prod1-ingress-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,azure/3-ingress-0.0.2.yaml)
 
 
 .PHONY: apply-azure-dev1-0.0.1
 apply-azure-dev1-0.0.1: envsubst
 	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,azure/1-0.0.1.yaml)
 
-.PHONY: apply-azure-dev1-0.1.0
-apply-azure-dev1-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,azure/2-0.1.0.yaml)
+.PHONY: apply-azure-dev1-0.0.2
+apply-azure-dev1-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,azure/2-0.0.2.yaml)
 
-.PHONY: apply-azure-dev1-ingress-0.1.0
-apply-azure-dev1-ingress-0.1.0: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,azure/3-ingress-0.1.0.yaml)
+.PHONY: apply-azure-dev1-ingress-0.0.2
+apply-azure-dev1-ingress-0.0.2: envsubst
+	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,azure/3-ingress-0.0.2.yaml)
 
 
 apply-global-kyverno:
 	KUBECTL_EXTERNAL_DIFF="diff --color -N -u" kubectl -n $(HMC_NAMESPACE) diff -f MultiClusterServices/1-kyverno.yaml || true
 	kubectl -n $(HMC_NAMESPACE) apply -f MultiClusterServices/1-kyverno.yaml
 
-.PHONY: approve-templatechain-aws-standalone-cp-0.0.1
-approve-templatechain-aws-standalone-cp-0.0.1:
-	$(call approve-clustertemplatechain,$(TARGET_NAMESPACE),aws-standalone-cp-0.0.1)
+.PHONY: approve-clustertemplatechain-aws-standalone-cp-0.0.1
+approve-clustertemplatechain-aws-standalone-cp-0.0.1:
+	$(call approve-clustertemplatechain,$(TARGET_NAMESPACE),demo-aws-standalone-cp-0.0.1)
 
-.PHONY: approve-templatechain-aws-standalone-cp-0.0.2
-approve-templatechain-aws-standalone-cp-0.0.2:
-	$(call approve-clustertemplatechain,$(TARGET_NAMESPACE),aws-standalone-cp-0.0.2)
-
-# copy-servicetemplate will copy a servicetemplate from one namespace into another
-# $1 - source namespace
-# $2 - target namespace
-# $3 - templatename
-define copy-servicetemplate
-	@kubectl -n $(2) get servicetemplate $(3) > /dev/null 2>&1 && echo "Template $(3) already approved in namespace $(2)" || kubectl -n $(1) get servicetemplate $(3) -o json | jq 'del(.metadata["namespace"])' | kubectl -n $(2) apply -f -
-endef
+.PHONY: approve-clustertemplatechain-aws-standalone-cp-0.0.2
+approve-clustertemplatechain-aws-standalone-cp-0.0.2:
+	$(call approve-clustertemplatechain,$(TARGET_NAMESPACE),demo-aws-standalone-cp-0.0.2)
 
 
 # approve-clustertemplatechain will approve a clustertemplate in a namespace
 # $1 - target namespace
 # $2 - templatename
 define approve-clustertemplatechain
-	kubectl -n hmc-system patch TemplateManagement hmc --type='json' -p='[ \
+	kubectl -n hmc-system patch AccessManagement hmc --type='json' -p='[ \
+		{ "op": "add", "path": "/spec/accessRules", "value": [] }, \
 		{ \
 			"op": "add", \
 			"path": "/spec/accessRules/-", \
@@ -181,25 +222,60 @@ define approve-clustertemplatechain
 	]'
 endef
 
-.PHONY: approve-template-nginx-ingress-nginx-4.11.0
-approve-template-nginx-ingress-nginx-4.11.0:
-	$(call copy-servicetemplate,$(HMC_NAMESPACE),$(TARGET_NAMESPACE),ingress-nginx-4-11-0)
-
-# copy-credential will copy a credential from one namespace into another
-# $1 - source namespace
-# $2 - target namespace
-# $3 - credentialname
-define copy-credential
-	@kubectl -n $(2) get credentials.hmc.mirantis.com $(3) > /dev/null 2>&1 && echo "Credential $(3) already approved in namespace $(2)" || kubectl -n $(1) get credentials.hmc.mirantis.com $(3) -o json | jq 'del(.metadata["namespace"])' | kubectl -n $(2) apply -f -
+# approve-servicetemplatechain will approve a servicetemplatechain in a namespace
+# $1 - target namespace
+# $2 - templatename
+define approve-servicetemplatechain
+	kubectl -n hmc-system patch AccessManagement hmc --type='json' -p='[ \
+		{ "op": "add", "path": "/spec/accessRules", "value": [] }, \
+		{ \
+			"op": "add", \
+			"path": "/spec/accessRules/-", \
+			"value": { \
+				"serviceTemplateChains": ["$(2)"], \
+				"targetNamespaces": { \
+					"list": ["$(1)"] \
+				} \
+			} \
+		} \
+	]'
 endef
 
-.PHONY: approve-credential-azure-cluster-identity-cred
-approve-credentials-azure:
-	$(call copy-credential,$(HMC_NAMESPACE),$(TARGET_NAMESPACE),azure-cluster-identity-cred)
+.PHONY: approve-templatechain-demo-ingress-nginx-4.11.0
+approve-templatechain-demo-ingress-nginx-4.11.0:
+	$(call approve-servicetemplatechain,$(TARGET_NAMESPACE),demo-ingress-nginx-4.11.0)
 
-.PHONY: approve-credential-aws-cluster-identity-cred
-approve-credentials-aws:
-	$(call copy-credential,$(HMC_NAMESPACE),$(TARGET_NAMESPACE),aws-cluster-identity-cred)
+.PHONY: approve-templatechain-demo-ingress-nginx-4.11.3
+approve-templatechain-demo-ingress-nginx-4.11.3:
+	$(call approve-servicetemplatechain,$(TARGET_NAMESPACE),demo-ingress-nginx-4.11.3)
+
+# approve-credential will approve a credential in a namespace
+# $1 - target namespace
+# $2 - credentialname
+define approve-credential
+	kubectl -n hmc-system patch AccessManagement hmc --type='json' -p='[ \
+		{ "op": "add", "path": "/spec/accessRules", "value": [] }, \
+		{"op":"add","path":"/spec/accessRules","value":""}, \
+		{ \
+			"op": "add", \
+			"path": "/spec/accessRules/-", \
+			"value": { \
+				"credentials": ["$(2)"], \
+				"targetNamespaces": { \
+					"list": ["$(1)"] \
+				} \
+			} \
+		} \
+	]'
+endef
+
+.PHONY: approve-credential-azure
+approve-credential-azure:
+	$(call approve-credential,$(TARGET_NAMESPACE),azure-cluster-identity-cred)
+
+.PHONY: approve-credential-aws
+approve-credential-aws:
+	$(call approve-credential,$(TARGET_NAMESPACE),aws-cluster-identity-cred)
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
@@ -238,28 +314,33 @@ create-target-namespace-rolebindings: envsubst
 	kubectl get namespace $(TARGET_NAMESPACE) > /dev/null 2>&1 || kubectl create namespace $(TARGET_NAMESPACE)
 	TARGET_NAMESPACE=$(TARGET_NAMESPACE) $(ENVSUBST) -i rolebindings.yaml | kubectl apply -f -
 
-credentials/ca/ca.crt:
-	mkdir -p credentials/ca
-	docker cp $(KIND_CLUSTER_NAME)-control-plane:/etc/kubernetes/pki/ca.crt credentials/ca/ca.crt
+certs/ca/ca.crt:
+	mkdir -p certs/ca
+	docker cp $(KIND_CLUSTER_NAME)-control-plane:/etc/kubernetes/pki/ca.crt certs/ca/ca.crt
 
-credentials/ca/ca.key:
-	mkdir -p credentials/ca
-	docker cp $(KIND_CLUSTER_NAME)-control-plane:/etc/kubernetes/pki/ca.key credentials/ca/ca.key
+certs/ca/ca.key:
+	mkdir -p certs/ca
+	docker cp $(KIND_CLUSTER_NAME)-control-plane:/etc/kubernetes/pki/ca.key certs/ca/ca.key
 
-credentials/platform-engineer/platform-engineer1.key:
-	mkdir -p credentials/platform-engineer
-	openssl genrsa -out credentials/platform-engineer/platform-engineer1.key 2048
+certs/platform-engineer/platform-engineer1.key:
+	mkdir -p certs/platform-engineer
+	openssl genrsa -out certs/platform-engineer/platform-engineer1.key 2048
 
-credentials/platform-engineer/platform-engineer1.csr: credentials/platform-engineer/platform-engineer1.key
-	openssl req -new -key credentials/platform-engineer/platform-engineer1.key -out credentials/platform-engineer/platform-engineer1.csr -subj '/CN=platform-engineer1/O=blue'
+certs/platform-engineer/platform-engineer1.csr: certs/platform-engineer/platform-engineer1.key
+	openssl req -new -key certs/platform-engineer/platform-engineer1.key -out certs/platform-engineer/platform-engineer1.csr -subj '/CN=platform-engineer1/O=$(TARGET_NAMESPACE)'
 
-credentials/platform-engineer/platform-engineer1.crt: credentials/platform-engineer/platform-engineer1.csr credentials/ca/ca.crt credentials/ca/ca.key
-	openssl x509 -req -in credentials/platform-engineer/platform-engineer1.csr -CA credentials/ca/ca.crt -CAkey credentials/ca/ca.key -CAcreateserial -out credentials/platform-engineer/platform-engineer1.crt -days 360
+certs/platform-engineer/platform-engineer1.crt: certs/platform-engineer/platform-engineer1.csr certs/ca/ca.crt certs/ca/ca.key
+	openssl x509 -req -in certs/platform-engineer/platform-engineer1.csr -CA certs/ca/ca.crt -CAkey certs/ca/ca.key -CAcreateserial -out certs/platform-engineer/platform-engineer1.crt -days 360
+
+.PHONY: clean-certs
+clean-certs:
+	rm -rf certs/ca
+	rm -rf certs/platform-engineer
 
 .PHONY: generate-platform-engineer1-kubeconfig
-generate-platform-engineer1-kubeconfig: credentials/platform-engineer/platform-engineer1.crt envsubst
-	KIND_CLUSTER_NAME=$(KIND_CLUSTER_NAME) USER_NAME=platform-engineer1 USER_CRT=$$(cat credentials/platform-engineer/platform-engineer1.crt | base64) USER_KEY=$$(cat credentials/platform-engineer/platform-engineer1.key | base64)  CA_CRT=$$(cat credentials/ca/ca.crt | base64) CLUSTER_HOST_PORT=$$(docker port $(KIND_CLUSTER_NAME)-control-plane 6443) $(ENVSUBST) -i credentials/kubeconfig-template.yaml > credentials/platform-engineer/kubeconfig.yaml
-	@echo "Config exported to credentials/platform-engineer/kubeconfig.yaml"
+generate-platform-engineer1-kubeconfig: certs/platform-engineer/platform-engineer1.crt envsubst
+	KIND_CLUSTER_NAME=$(KIND_CLUSTER_NAME) USER_NAME=platform-engineer1 USER_CRT=$$(cat certs/platform-engineer/platform-engineer1.crt | base64) USER_KEY=$$(cat certs/platform-engineer/platform-engineer1.key | base64)  CA_CRT=$$(cat certs/ca/ca.crt | base64) CLUSTER_HOST_PORT=$$(docker port $(KIND_CLUSTER_NAME)-control-plane 6443) $(ENVSUBST) -i certs/kubeconfig-template.yaml > certs/platform-engineer/kubeconfig.yaml
+	@echo "Config exported to certs/platform-engineer/kubeconfig.yaml"
 
 .PHONY: helm-package
 helm-package: $(CHARTS_PACKAGE_DIR) helm

@@ -4,12 +4,9 @@ metadata:
   name: ${NAMESPACE}-aws-${CLUSTERNAME}
   namespace: ${NAMESPACE}
 spec:
-  template: aws-standalone-cp-0-1-0
+  template: demo-aws-standalone-cp-0.0.1
   credential: aws-cluster-identity-cred
   config:
-    clusterIdentity:
-      name: aws-cluster-identity
-      namespace: hmc-system
     region: us-east-2
     publicIP: true
     controlPlaneNumber: 1
@@ -19,6 +16,6 @@ spec:
     worker:
       instanceType: t3.small
   services:
-    - template: ingress-nginx-4-11-0
+    - template: demo-ingress-nginx-4.11.0
       name: ingress-nginx
       namespace: ingress-nginx

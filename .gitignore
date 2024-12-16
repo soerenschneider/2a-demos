@@ -14,5 +14,5 @@ vendor
 # mkdocs folder
 mkdocs
 
-credentials/ca
-credentials/platform-engineer
+certs/ca
+certs/platform-engineer
