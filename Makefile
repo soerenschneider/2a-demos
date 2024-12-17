@@ -1,7 +1,9 @@
 HMC_NAMESPACE ?= hmc-system
+HMC_REPO ?= oci://ghcr.io/mirantis/hmc/charts/hmc
+HMC_VERSION ?= 0.0.5
 TESTING_NAMESPACE ?= hmc-system
 TARGET_NAMESPACE ?= blue
-KIND_CLUSTER_NAME ?= kind
+KIND_CLUSTER_NAME ?= hmc-management-local
 
 
 ENVSUBST ?= $(LOCALBIN)/envsubst-$(ENVSUBST_VERSION)
@@ -10,11 +12,8 @@ ENVSUBST_VERSION ?= v1.4.2
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint-$(GOLANGCI_LINT_VERSION)
 GOLANGCI_LINT_VERSION ?= v1.61.0
 
-## Location to install dependencies to
-LOCALBIN ?= $(shell pwd)/bin
 
-HELM ?= $(LOCALBIN)/helm-$(HELM_VERSION)
-HELM_VERSION ?= v3.15.1
+
 
 TEMPLATES_DIR := templates
 TEMPLATE_FOLDERS = $(patsubst $(TEMPLATES_DIR)/%,%,$(wildcard $(TEMPLATES_DIR)/*))
@@ -26,6 +25,123 @@ $(CHARTS_PACKAGE_DIR): | $(LOCALBIN)
 REGISTRY_PORT ?= 5001
 REGISTRY_REPO ?= oci://127.0.0.1:$(REGISTRY_PORT)/charts
 REGISTRY_IS_OCI = $(shell echo $(REGISTRY_REPO) | grep -q oci && echo true || echo false)
+
+##@ General
+
+# The help target prints out all targets with their descriptions organized
+# beneath their categories. The categories are represented by '##@' and the
+# target descriptions by '##'. The awk command is responsible for reading the
+# entire set of makefiles included in this invocation, looking for lines of the
+# file as xyz: ## something, and then pretty-format the target and help. Then,
+# if there's a line with ##@ something, that gets pretty-printed as a category.
+# More info on the usage of ANSI control characters for terminal formatting:
+# https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_parameters
+# More info on the awk command:
+# http://linuxcommand.org/lc3_adv_awk.php
+
+.PHONY: help
+help: ## Display this help.
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+
+##@ Binaries
+
+OS=$(shell uname | tr A-Z a-z)
+ifeq ($(shell uname -m),'x86_64') 
+	ARCH=amd64
+else
+	ARCH=arm64
+endif
+
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	@mkdir -p $(LOCALBIN)
+
+KIND ?= PATH=$(LOCALBIN):$(PATH) kind
+KIND_VERSION ?= 0.25.0
+
+HELM ?= PATH=$(LOCALBIN):$(PATH) helm
+HELM_VERSION ?= v3.15.1
+
+KUBECTL ?= PATH=$(LOCALBIN):$(PATH) kubectl
+
+# installs binary locally
+$(LOCALBIN)/%: $(LOCALBIN)
+	@curl -sLo $(LOCALBIN)/$(binary) $(url);\
+		chmod +x $(LOCALBIN)/$(binary);
+
+# checks if the binary exists in the PATH and installs it locally otherwise
+.check-binary-%:
+	@if ! builtin type -P "$(binary)" $ > /dev/null; then\
+		echo "Can't find the $(binary) in path, installing it locally";\
+		make $(LOCALBIN)/$(binary);\
+	fi;
+
+%kind: binary = kind
+%kind: url = "https://kind.sigs.k8s.io/dl/v$(KIND_VERSION)/kind-$(OS)-$(ARCH)"
+%kubectl: binary = kubectl
+%kubectl: url = "https://dl.k8s.io/release/$(shell curl -L -s https://dl.k8s.io/release/stable.txt)/bin/$(OS)/$(ARCH)/kubectl"
+%helm: binary = helm
+
+# go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
+# $1 - target path with name of binary (ideally with version)
+# $2 - package url which can be installed
+# $3 - specific version of package
+define go-install-tool
+@[ -f $(1) ] || { \
+set -e; \
+package=$(2)@$(3) ;\
+echo "Downloading $${package}" ;\
+GOBIN=$(LOCALBIN) go install $${package} ;\
+if [ ! -f $(1) ]; then mv -f "$$(echo "$(1)" | sed "s/-$(3)$$//")" $(1); fi ;\
+}
+endef
+
+
+.PHONY: kind
+kind: $(LOCALBIN)/kind ## Install kind binary locally if necessary
+
+.PHONY: envsubst
+envsubst: $(ENVSUBST)
+$(ENVSUBST): | $(LOCALBIN)
+	$(call go-install-tool,$(ENVSUBST),github.com/a8m/envsubst/cmd/envsubst,${ENVSUBST_VERSION})
+
+.PHONY: helm
+helm: $(LOCALBIN)/helm ## Install helm binary locally if necessary
+HELM_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3"
+$(LOCALBIN)/helm: | $(LOCALBIN)
+	rm -f $(LOCALBIN)/helm-*
+	curl -s --fail $(HELM_INSTALL_SCRIPT) | USE_SUDO=false HELM_INSTALL_DIR=$(LOCALBIN) DESIRED_VERSION=$(HELM_VERSION) BINARY_NAME=helm PATH="$(LOCALBIN):$(PATH)" bash
+
+
+
+##@ Bootstrap and setup kubernetes management cluster
+
+.PHONY: bootstrap-kind-cluster
+bootstrap-kind-cluster: .check-binary-kind .check-binary-kubectl ## Provision local kind cluster
+	@if $(KIND) get clusters | grep -q $(KIND_CLUSTER_NAME); then\
+		echo "$(KIND_CLUSTER_NAME) kind cluster already installed";\
+	else\
+		$(KIND) create cluster --name=$(KIND_CLUSTER_NAME);\
+	fi
+	@PATH=$(KUBECTL) config use-context kind-$(KIND_CLUSTER_NAME)
+
+.PHONY: deploy-2a
+deploy-2a: .check-binary-helm ## Deploy 2A to the management cluster
+	$(HELM) install hmc $(HMC_REPO) --version $(HMC_VERSION) -n $(HMC_NAMESPACE) --create-namespace
+
+##@ Tear down management cluster
+
+.PHONY: delete-kind-cluster
+delete-kind-cluster: .check-binary-kind ## Tear down local kind cluster
+	@if $(KIND) get clusters | grep -q $(KIND_CLUSTER_NAME); then\
+		$(KIND) kind delete cluster --name=$(KIND_CLUSTER_NAME);\
+	else\
+		echo "Can't find kind cluster with the name $(KIND_CLUSTER_NAME)";\
+	fi
+
+##@ TBD
 
 .PHONY: setup-helmrepo
 setup-helmrepo:
@@ -277,38 +393,6 @@ approve-credential-azure:
 approve-credential-aws:
 	$(call approve-credential,$(TARGET_NAMESPACE),aws-cluster-identity-cred)
 
-## Location to install dependencies to
-LOCALBIN ?= $(shell pwd)/bin
-$(LOCALBIN):
-	mkdir -p $(LOCALBIN)
-
-.PHONY: envsubst
-envsubst: $(ENVSUBST)
-$(ENVSUBST): | $(LOCALBIN)
-	$(call go-install-tool,$(ENVSUBST),github.com/a8m/envsubst/cmd/envsubst,${ENVSUBST_VERSION})
-
-.PHONY: helm
-helm: $(HELM) ## Download helm locally if necessary.
-HELM_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3"
-$(HELM): | $(LOCALBIN)
-	rm -f $(LOCALBIN)/helm-*
-	curl -s --fail $(HELM_INSTALL_SCRIPT) | USE_SUDO=false HELM_INSTALL_DIR=$(LOCALBIN) DESIRED_VERSION=$(HELM_VERSION) BINARY_NAME=helm-$(HELM_VERSION) PATH="$(LOCALBIN):$(PATH)" bash
-
-
-# go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
-# $1 - target path with name of binary (ideally with version)
-# $2 - package url which can be installed
-# $3 - specific version of package
-define go-install-tool
-@[ -f $(1) ] || { \
-set -e; \
-package=$(2)@$(3) ;\
-echo "Downloading $${package}" ;\
-GOBIN=$(LOCALBIN) go install $${package} ;\
-if [ ! -f $(1) ]; then mv -f "$$(echo "$(1)" | sed "s/-$(3)$$//")" $(1); fi ;\
-}
-endef
-
 .PHONY: create-target-namespace-rolebindings
 create-target-namespace-rolebindings: envsubst
 	kubectl get namespace $(TARGET_NAMESPACE) > /dev/null 2>&1 || kubectl create namespace $(TARGET_NAMESPACE)
@@ -343,7 +427,7 @@ generate-platform-engineer1-kubeconfig: certs/platform-engineer/platform-enginee
 	@echo "Config exported to certs/platform-engineer/kubeconfig.yaml"
 
 .PHONY: helm-package
-helm-package: $(CHARTS_PACKAGE_DIR) helm
+helm-package: $(CHARTS_PACKAGE_DIR) .check-binary-helm
 	@make $(patsubst %,package-%-tmpl,$(TEMPLATE_FOLDERS))
 
 TEAMPLATES = $(patsubst $(TEMPLATES_DIR)/%,%,$(wildcard $(TEMPLATES_DIR)/*))
