@@ -123,7 +123,7 @@ In the real world this would most probably be done by a Platform Team Lead that 
 
 This demo shows how to upgrade an existing cluster through the cluster template system. This expects `Demo 1` to be completed.
 
-This demo will upgrae the k8s cluster from `v1.31.1+k0s.1` (which is part of the `demo-aws-standalone-cp-0.0.1` template) to `v1.31.2+k0s.0` (which is part of `demo-aws-standalone-cp-0.0.2`)
+This demo will upgrade the k8s cluster from `v1.31.1+k0s.1` (which is part of the `demo-aws-standalone-cp-0.0.1` template) to `v1.31.2+k0s.0` (which is part of `demo-aws-standalone-cp-0.0.2`)
 
 1. Install ClusterTemplate Upgrade
     ```
@@ -135,7 +135,7 @@ This demo will upgrae the k8s cluster from `v1.31.1+k0s.1` (which is part of the
 2. The fact that we have an upgrade available will be reported by 2A, and can be checked with:
 
     ```
-    kubectl -n hmc-system get managedcluster.hmc.mirantis.com hmc-system-aws-test1  -o json | jq -r '.status.availableUpgrades'
+    kubectl -n hmc-system get managedcluster.hmc.mirantis.com hmc-system-aws-test1 -o jsonpath='{.status.availableUpgrades}'
     ```
 
     @TODO: change command to load all clusters
