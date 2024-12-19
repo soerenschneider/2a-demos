@@ -30,13 +30,22 @@ The Setup part for Demos is assumed to be created once before an actual demo is 
     ```
     kubectl get management hmc -o json | jq -r '.status.components | to_entries[] | "\(.key): \(.value.success // .value.error)"'
     ```
-    @TODO: document what the output should look like
+   If the installation of 2a succeeded, the output should look as follows
+   ```
+   capi: true
+   cluster-api-provider-aws: true
+   cluster-api-provider-azure: true
+   cluster-api-provider-vsphere: true
+   hmc: true
+   k0smotron: true
+   projectsveltos: true
+   ```
 
 4. Install the Demo Helm Repo into 2A:
     ```
     make setup-helmrepo
     ```
-    @TODO: describe what this does
+    This step adds a [`HelmRepository` resource](https://fluxcd.io/flux/components/source/helmrepositories/) to the cluster that contains Helm charts for this demo.
 
 ### Infra Setup
 
