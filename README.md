@@ -152,8 +152,10 @@ This demo will upgrade the k8s cluster from `v1.31.1+k0s.1` (which is part of th
     ```
 
 
-4. Monitor the rollout of the upgrade @TODO: find a way to monitor the rollout of the upgrade
-
+4. Monitor the rollout of the upgrade
+   ```bash
+   KUBECONFIG="kubeconfigs/hmc-system-aws-test1.kubeconfig" kubectl get nodes --all-namespaces --watch
+   ```
 
 ## Demo 3: Install ServiceTemplate into single Cluster
 
