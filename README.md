@@ -18,13 +18,13 @@ The Setup part for Demos is assumed to be created once before an actual demo is 
     ```
     make bootstrap-kind-cluster
     ```
-    You could give it another name by specifying `KIND_CLUSTER_NAME` environment variable
+    You could give it another name by specifying the `KIND_CLUSTER_NAME` environment variable.
 
 2. Install 2A into kind cluster:
     ```
     make deploy-2a
     ```
-    The Demos in this repo require at least 2A v0.0.5 or newer. You can change the version of the 2A by specifying the  
+    The Demos in this repo require at least 2A v0.0.5 or newer. You can change the version of 2A by specifying the `HMC_VERSION` environment variable.
 
 3. Monitor the installation of 2A:
     ```
