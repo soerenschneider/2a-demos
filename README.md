@@ -168,7 +168,6 @@ In order to run this demo you need `Demo 1` and/or `Demo 1 & 2` already complete
     make install-servicetemplate-demo-ingress-nginx-4.11.0
     ```
 
-
 2. Apply ServiceTemplate to cluster:
     ```
     make apply-aws-test1-0.0.2-ingress
@@ -177,7 +176,7 @@ In order to run this demo you need `Demo 1` and/or `Demo 1 & 2` already complete
     ```
     make apply-aws-test1-0.0.1-ingress
     ```
-    This applies either the [0.0.1-ingress.yaml](managedClusters/aws/0.0.1-ingress.yaml) or [0.0.2-ingress.yaml](managedClusters/aws/0.0.2-ingress.yaml) yaml template. For simplicity the yamls are a full `ManagedCluster` Object and not just a diff from the original cluster. The command output will show you a diff that explains that the only thing that actually has chnaged is the `serviceTemplate` key
+    This applies either the [0.0.1-ingress.yaml](managedClusters/aws/0.0.1-ingress.yaml) or [0.0.2-ingress.yaml](managedClusters/aws/0.0.2-ingress.yaml) yaml template. For simplicity the yamls are a full `ManagedCluster` Object and not just a diff from the original cluster. The command output will show you a diff that explains that the only thing that actually has changed is the `serviceTemplate` key
 
 
 3. Show that ingress-nginx is installed in the managed cluster:
@@ -198,7 +197,7 @@ This Demo shows the capability of 2A to install a ServiceTemplate into multiple 
 
 ## Demo 7: Test new clusterTemplate as 2A Admin, then approve them in separate Namespace
 
-## Demo 8: Use newwly approved Namespace in separate Namespace
+## Demo 8: Use newly approved Namespace in separate Namespace
 
 ## Demo 9: Approve ServiceTemplate in separate Namespace
 
