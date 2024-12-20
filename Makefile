@@ -12,8 +12,13 @@ ENVSUBST_VERSION ?= v1.4.2
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint-$(GOLANGCI_LINT_VERSION)
 GOLANGCI_LINT_VERSION ?= v1.61.0
 
+# prevent collisions of names in shared resources by adding some pseudo-randomness
+UNIQUE_CLUSTER_FILE := .unique-cluster-suffix
+UNIQUE_CLUSTER_SUFFIX := $(shell cat $(UNIQUE_CLUSTER_FILE))
 
-
+$(UNIQUE_CLUSTER_FILE):
+	@echo "File $(UNIQUE_CLUSTER_FILE) does not exist, creating it..."
+	@docker run busybox hostname > $(UNIQUE_CLUSTER_FILE)
 
 TEMPLATES_DIR := templates
 TEMPLATE_FOLDERS = $(patsubst $(TEMPLATES_DIR)/%,%,$(wildcard $(TEMPLATES_DIR)/*))
@@ -156,7 +161,7 @@ setup-aws-creds: envsubst
 setup-azure-creds: envsubst
 	$(ENVSUBST) -no-unset -i setup/azure-credentials.yaml | kubectl apply -f -
 
-# install-template will install a given template
+# install-txemplate will install a given template
 # $1 - yaml file
 define install-template
 	kubectl apply -f $(1)
@@ -190,7 +195,7 @@ define apply-managed-cluster-yaml
 	@echo "applying: "
 	@NAMESPACE=$(1) CLUSTERNAME=$(2) $(ENVSUBST) -i $(3)  | KUBECTL_EXTERNAL_DIFF="diff --color -N -u" kubectl diff  -f - || true
 	@echo
-	NAMESPACE=$(1) CLUSTERNAME=$(2) $(ENVSUBST) -i $(3) | kubectl apply -f -
+	#NAMESPACE=$(1) CLUSTERNAME=$(2) $(ENVSUBST) -i $(3) | kubectl apply -f -
 endef
 
 # apply-managed-cluster-yaml-platform-engineer1 will apply a given cluster yaml as platform-engineer1
@@ -205,8 +210,8 @@ define apply-managed-cluster-yaml-platform-engineer1
 endef
 
 .PHONY: apply-aws-test1-0.0.1
-apply-aws-test1-0.0.1: envsubst
-	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,managedClusters/aws/0.0.1.yaml)
+apply-aws-test1-0.0.1: envsubst $(UNIQUE_CLUSTER_FILE)
+	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1-$(UNIQUE_CLUSTER_SUFFIX),managedClusters/aws/0.0.1.yaml)
 
 .PHONY: watch-aws-test1
 watch-aws-test1:

@@ -16,3 +16,5 @@ mkdocs
 
 certs/ca
 certs/platform-engineer1
+
+/.unique-cluster-suffix
