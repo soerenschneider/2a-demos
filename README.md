@@ -71,9 +71,41 @@ This assumes that you already have configured the required [AWS IAM Roles](https
     make setup-aws-creds
     ```
 
-## Demo 1: Single Standalone Cluster Deployment
+### Demo Cluster Setup
 
-This demo show how a simple standalone cluster from a custom ClusterTemplate can be created in the `hmc-system` namespace. It does not require any additional users in k8s or namespaces to be installed.
+If your plan is to demo an upgrade (Demo 2) or anything related to ServiceTemplates (Demo 3 & 4) right after Demo 1, it is recommended to create a test cluster before the actual demo starts. The reason for this is that creation of a cluster takes around 10-15 mins and could cause a long waiting time during the demo. If you already have a second cluster you can show the creation of a cluster (Demo 1) and then use the existing cluster to show the other demos.
+
+
+1. Install templates and create aws-test1 cluster
+    ```
+    make install-clustertemplate-demo-aws-standalone-cp-0.0.1
+    make apply-aws-test1-0.0.1
+    make watch-aws-test1
+    ```
+
+### Blue Namespace & Platform Engineer Credentials
+
+If you plan to demo Demo 5 or above we need a secondary namespace (we call it blue in this demo) and credentials for a Platform Engineer that does only have access to the blue namespace and not cluster admin.
+
+1. Create target namespace blue and required rolebindings
+    ```
+    make create-target-namespace-rolebindings
+    ```
+
+2. Generate Kubeconfig for platform engineer
+    ```
+    make clean-certs
+    make generate-platform-engineer1-kubeconfig
+    ```
+
+3. Test Kubeconfig
+    ```
+    KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" kubectl get ns blue
+    ```
+
+## Demo 1: Standalone Cluster Deployment
+
+This demo shows how a simple standalone cluster from a custom ClusterTemplate can be created in the `hmc-system` namespace. It does not require any additional users in k8s or namespaces to be installed.
 
 In the real world this would most probably be done by a Platform Team Lead that has admin access to the Management Cluster in order to create a test cluster from a new ClusterTemplate without the expectation for this cluster to exist for a long time.
 
@@ -90,9 +122,10 @@ In the real world this would most probably be done by a Platform Team Lead that 
 
     As assumed by 2A all ClusterTemplates will be installed first into the `hmc-system` Namespace and can there be used directly to create a Cluster:
 
-2. Install Test Cluster:
+2. Install Test Clusters:
     ```
     make apply-aws-test1-0.0.1
+    make apply-aws-test2-0.0.1
     ```
     This will create `ManagedCluster` with very simple defaults from the ClusterTemplate `demo-aws-standalone-cp-0.0.1`.
     The yaml for this can be found under `managedClusters/aws/1-0.0.1.yaml` and could be modified if needed.
@@ -101,29 +134,31 @@ In the real world this would most probably be done by a Platform Team Lead that 
 
 3. Monitor the deployment of the Cluster:
     ```
-    make watch-aws-test1
+    make watch-aws-test2
     ```
     This will show the status and rollout of the cluster as seen by 2A.
 
 
-4. Create Kubeconfig for Cluster:
+4. Create Kubeconfig for Clusters:
     ```
     make get-kubeconfig-aws-test1
+    make get-kubeconfig-aws-test2
     ````
     This will put a kubeconfig for a cluster admin under the folder `kubeconfigs`
 
 
-5. Access Cluster through kubectl
+5. Access Clusters through kubectl
     ```
     KUBECONFIG="kubeconfigs/hmc-system-aws-test1.kubeconfig" kubectl get pods -A
     ```
 
+    ```
+    KUBECONFIG="kubeconfigs/hmc-system-aws-test2.kubeconfig" kubectl get pods -A
+    ```
 
 ## Demo 2: Single Standalone Cluster Upgrade
 
-@TODO: explain that if this should be demoed a test cluster for the upgrade would probably need to be created already before this or we will need to wait 10-15min for the single cluster to be created
-
-This demo shows how to upgrade an existing cluster through the cluster template system. This expects `Demo 1` to be completed.
+This demo shows how to upgrade an existing cluster through the cluster template system. This expects `Demo 1` to be completed or the `aws-test1` cluster already created during the Demo Setup.
 
 This demo will upgrade the k8s cluster from `v1.31.1+k0s.1` (which is part of the `demo-aws-standalone-cp-0.0.1` template) to `v1.31.2+k0s.0` (which is part of `demo-aws-standalone-cp-0.0.2`)
 
@@ -163,7 +198,7 @@ This demo will upgrade the k8s cluster from `v1.31.1+k0s.1` (which is part of th
 
 This demo shows how a ServiceTemplate can be installed in a Cluster.
 
-In order to run this demo you need `Demo 1` and/or `Demo 1 & 2` already completed.
+In order to run this demo you need `Demo 1` completed, which created the `aws-test2` cluster.
 
 1. Install ServiceTemplate in 2A:
     ```
@@ -172,30 +207,82 @@ In order to run this demo you need `Demo 1` and/or `Demo 1 & 2` already complete
 
 2. Apply ServiceTemplate to cluster:
     ```
-    make apply-aws-test1-0.0.2-ingress
+    make apply-aws-test2-0.0.1-ingress
     ```
-    Or if you just have completed Demo 1
-    ```
-    make apply-aws-test1-0.0.1-ingress
-    ```
-    This applies either the [0.0.1-ingress.yaml](managedClusters/aws/0.0.1-ingress.yaml) or [0.0.2-ingress.yaml](managedClusters/aws/0.0.2-ingress.yaml) yaml template. For simplicity the yamls are a full `ManagedCluster` Object and not just a diff from the original cluster. The command output will show you a diff that explains that the only thing that actually has changed is the `serviceTemplate` key
+    This applies the [0.0.1-ingress.yaml](managedClusters/aws/0.0.1-ingress.yaml) yaml template. For simplicity the yamls are a full `ManagedCluster` Object and not just a diff from the original cluster. The command output will show you a diff that explains that the only thing that actually has changed is the `serviceTemplate` key
 
 
 3. Show that ingress-nginx is installed in the managed cluster:
     ```
-    KUBECONFIG="kubeconfigs/hmc-system-aws-test1.kubeconfig" kubectl get pods -n ingress-nginx
+    KUBECONFIG="kubeconfigs/hmc-system-aws-test2.kubeconfig" kubectl get pods -n ingress-nginx --watch
     ```
 
 
 ## Demo 4: Install ServiceTemplate into multiple Cluster
 
-This Demo shows the capability of 2A to install a ServiceTemplate into multiple Clusters without the need to reference it in every cluster as we did in `Demo 3`. Most probably we only have a single cluster at this point which defeats the idea to show something in multiple Clusters. For this purpose there is the possiblity to create a second test cluster through `make apply-aws-test2-0.0.1`. Be aware though that the cluster creation takes around 10-15mins, so if you continue right away with the MultiClusterService you might not be able to show both clusters right away.
+This Demo shows the capability of 2A to install a ServiceTemplate into multiple Clusters without the need to reference it in every cluster as we did in `Demo 3`.
 
+While this demo can be shown even if you only have a single cluster, its obviously better to be demoed with two clusters. If you followed along the demo process you should have two clusters.
+
+Be aware though that the cluster creation takes around 10-15mins, so depending on how fast you give the demo, the cluster creation might not be completed and the installation of services possible also delayed. You can totally follow this demo and the services will be installed after the clusters are ready.
+
+1. Install Kyverno ServiceTemplate in 2A:
+    ```
+    make install-servicetemplate-demo-kyverno-3.2.6
+    ```
+    This will install a new servicetemplate which installs a standard installation of kyverno in a cluster. It has a clusterSelector configuration of the label `app.kubernetes.io/managed-by: Helm` which currently is the simplest way to match all clusters.
+
+2. Apply MultiClusterService to cluster:
+    ```
+    make apply-multiclusterservice-global-kyverno
+    ```
+
+3. Show that kyverno is being installed in the two managed cluster:
+    ```
+    KUBECONFIG="kubeconfigs/hmc-system-aws-test1.kubeconfig" kubectl get pods -n kyverno
+    ```
+
+    ```
+    KUBECONFIG="kubeconfigs/hmc-system-aws-test2.kubeconfig" kubectl get pods -n kyverno
+    ```
+
+    There might be a couple of seconds delay before that 2A and sveltos needs to start the installation of kyverno, give it at least 1 mins.
 
 ## Demo 5: Approve ClusterTemplate & InfraCredentials for separate Namespace
 
+1. Approve the clustertemplate into the blue namespace
+    ```
+    make approve-clustertemplatechain-aws-standalone-cp-0.0.1
+    ```
+
+2. Approve the AWS credentials into the blue namspace
+    ```
+    make approve-credential-aws
+    ```
+
+3. Show that the platform engineer only can see the approved clustertemplate and no other ones:
+    ```
+    KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" kubectl get clustertemplates -n blue
+    ```
 
 ## Demo 6: Use approved ClusterTemplate in separate Namespace
+
+This demo is currently broken in HMC 0.0.5 until [#818](https://github.com/Mirantis/hmc/issues/818) is resolved.
+
+1. Create Cluster in blue namespace (this will be ran as platform engineer)
+    ```
+    make apply-aws-dev1-0.0.1
+    ```
+
+2. Get Kubeconfig for `aws-dev1`
+    ```
+    make get-kubeconfig-aws-dev1
+    ```
+
+3. Access cluster
+    ```
+    KUBECONFIG="kubeconfigs/blue-aws-dev1.kubeconfig" kubectl get pods -A
+    ```
 
 ## Demo 7: Test new clusterTemplate as 2A Admin, then approve them in separate Namespace
 

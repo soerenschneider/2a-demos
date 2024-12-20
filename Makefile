@@ -47,7 +47,7 @@ help: ## Display this help.
 ##@ Binaries
 
 OS=$(shell uname | tr A-Z a-z)
-ifeq ($(shell uname -m),x86_64) 
+ifeq ($(shell uname -m),x86_64)
 	ARCH=amd64
 else
 	ARCH=arm64
@@ -58,13 +58,13 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	@mkdir -p $(LOCALBIN)
 
-KIND ?= PATH=$(LOCALBIN):$(PATH) kind
+KIND ?= PATH=$(LOCALBIN):$$PATH kind
 KIND_VERSION ?= 0.25.0
 
-HELM ?= PATH=$(LOCALBIN):$(PATH) helm
+HELM ?= PATH=$(LOCALBIN):$$PATH helm
 HELM_VERSION ?= v3.15.1
 
-KUBECTL ?= PATH=$(LOCALBIN):$(PATH) kubectl
+KUBECTL ?= PATH=$(LOCALBIN):$$PATH kubectl
 
 # installs binary locally
 $(LOCALBIN)/%: $(LOCALBIN)
@@ -193,6 +193,17 @@ define apply-managed-cluster-yaml
 	NAMESPACE=$(1) CLUSTERNAME=$(2) $(ENVSUBST) -i $(3) | kubectl apply -f -
 endef
 
+# apply-managed-cluster-yaml-platform-engineer1 will apply a given cluster yaml as platform-engineer1
+# $1 - target namespace
+# $2 - clustername
+# $3 - yaml file
+define apply-managed-cluster-yaml-platform-engineer1
+	@echo "applying: "
+	@NAMESPACE=$(1) CLUSTERNAME=$(2) $(ENVSUBST) -i $(3)  | KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" KUBECTL_EXTERNAL_DIFF="diff --color -N -u" kubectl diff  -f - || true
+	@echo
+	NAMESPACE=$(1) CLUSTERNAME=$(2) $(ENVSUBST) -i $(3) | KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" kubectl apply -f -
+endef
+
 .PHONY: apply-aws-test1-0.0.1
 apply-aws-test1-0.0.1: envsubst
 	$(call apply-managed-cluster-yaml,$(TESTING_NAMESPACE),test1,managedClusters/aws/0.0.1.yaml)
@@ -244,28 +255,41 @@ apply-aws-test2-0.0.2-ingress: envsubst
 
 .PHONY: apply-aws-prod1-0.0.1
 apply-aws-prod1-0.0.1: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,managedClusters/aws/1-0.0.1.yaml)
+	$(call apply-managed-cluster-yaml-platform-engineer1,$(TARGET_NAMESPACE),prod1,managedClusters/aws/0.0.1.yaml)
+
+.PHONY: apply-aws-prod1-ingress-0.0.1
+apply-aws-prod1-ingress-0.0.1: envsubst
+	$(call apply-managed-cluster-yaml-platform-engineer1,$(TARGET_NAMESPACE),prod1,managedClusters/aws/0.0.1-ingress.yaml)
 
 .PHONY: apply-aws-prod1-0.0.2
 apply-aws-prod1-0.0.2: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,aws/2-0.0.2.yaml)
+	$(call apply-managed-cluster-yaml-platform-engineer1,$(TARGET_NAMESPACE),prod1,managedClusters/aws/0.0.2.yaml)
 
 .PHONY: apply-aws-prod1-ingress-0.0.2
 apply-aws-prod1-ingress-0.0.2: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),prod1,aws/3-ingress-0.0.2.yaml)
+	$(call apply-managed-cluster-yaml-platform-engineer1,$(TARGET_NAMESPACE),prod1,managedClusters/aws/0.0.2-ingress.yaml)
 
 
 .PHONY: apply-aws-dev1-0.0.1
 apply-aws-dev1-0.0.1: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,managedClusters/aws/0.0.1.yaml)
+	$(call apply-managed-cluster-yaml-platform-engineer1,$(TARGET_NAMESPACE),dev1,managedClusters/aws/0.0.1.yaml)
+
+.PHONY: get-kubeconfig-aws-dev1
+get-kubeconfig-aws-dev1:
+	KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" kubectl -n $(TARGET_NAMESPACE) get secret blue-aws-test1-kubeconfig -o jsonpath='{.data.value}' | base64 -d > kubeconfigs/$(TARGET_NAMESPACE)-aws-dev1.kubeconfig
+
+.PHONY: apply-aws-dev1-ingress-0.0.1
+apply-aws-dev1-ingress-0.0.1: envsubst
+	$(call apply-managed-cluster-yaml-platform-engineer1,$(TARGET_NAMESPACE),dev1,managedClusters/aws/0.0.1-ingress.yaml)
+
 
 .PHONY: apply-aws-dev1-0.0.2
 apply-aws-dev1-0.0.2: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,aws/2-0.0.2.yaml)
+	$(call apply-managed-cluster-yaml-platform-engineer1,$(TARGET_NAMESPACE),dev1,managedClusters/aws/0.0.2.yaml)
 
 .PHONY: apply-aws-dev1-ingress-0.0.2
 apply-aws-dev1-ingress-0.0.2: envsubst
-	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,aws/3-ingress-0.0.2.yaml)
+	$(call apply-managed-cluster-yaml-platform-engineer1,$(TARGET_NAMESPACE),dev1,managedClusters/aws/0.0.2-ingress.yaml)
 
 
 .PHONY: apply-azure-test1-0.0.1
@@ -307,9 +331,9 @@ apply-azure-dev1-ingress-0.0.2: envsubst
 	$(call apply-managed-cluster-yaml,$(TARGET_NAMESPACE),dev1,azure/3-ingress-0.0.2.yaml)
 
 
-apply-global-kyverno:
-	KUBECTL_EXTERNAL_DIFF="diff --color -N -u" kubectl -n $(HMC_NAMESPACE) diff -f MultiClusterServices/1-kyverno.yaml || true
-	kubectl -n $(HMC_NAMESPACE) apply -f MultiClusterServices/1-kyverno.yaml
+apply-multiclusterservice-global-kyverno:
+	KUBECTL_EXTERNAL_DIFF="diff --color -N -u" kubectl -n $(HMC_NAMESPACE) diff -f MultiClusterServices/1-global-kyverno.yaml || true
+	kubectl -n $(HMC_NAMESPACE) apply -f MultiClusterServices/1-global-kyverno.yaml
 
 .PHONY: approve-clustertemplatechain-aws-standalone-cp-0.0.1
 approve-clustertemplatechain-aws-standalone-cp-0.0.1:
@@ -372,7 +396,6 @@ approve-templatechain-demo-ingress-nginx-4.11.3:
 define approve-credential
 	kubectl -n hmc-system patch AccessManagement hmc --type='json' -p='[ \
 		{ "op": "add", "path": "/spec/accessRules", "value": [] }, \
-		{"op":"add","path":"/spec/accessRules","value":""}, \
 		{ \
 			"op": "add", \
 			"path": "/spec/accessRules/-", \
@@ -407,15 +430,15 @@ certs/ca/ca.key:
 	mkdir -p certs/ca
 	docker cp $(KIND_CLUSTER_NAME)-control-plane:/etc/kubernetes/pki/ca.key certs/ca/ca.key
 
-certs/platform-engineer/platform-engineer1.key:
-	mkdir -p certs/platform-engineer
-	openssl genrsa -out certs/platform-engineer/platform-engineer1.key 2048
+certs/platform-engineer1/platform-engineer1.key:
+	mkdir -p certs/platform-engineer1
+	openssl genrsa -out certs/platform-engineer1/platform-engineer1.key 2048
 
-certs/platform-engineer/platform-engineer1.csr: certs/platform-engineer/platform-engineer1.key
-	openssl req -new -key certs/platform-engineer/platform-engineer1.key -out certs/platform-engineer/platform-engineer1.csr -subj '/CN=platform-engineer1/O=$(TARGET_NAMESPACE)'
+certs/platform-engineer1/platform-engineer1.csr: certs/platform-engineer1/platform-engineer1.key
+	openssl req -new -key certs/platform-engineer1/platform-engineer1.key -out certs/platform-engineer1/platform-engineer1.csr -subj '/CN=platform-engineer1/O=$(TARGET_NAMESPACE)'
 
-certs/platform-engineer/platform-engineer1.crt: certs/platform-engineer/platform-engineer1.csr certs/ca/ca.crt certs/ca/ca.key
-	openssl x509 -req -in certs/platform-engineer/platform-engineer1.csr -CA certs/ca/ca.crt -CAkey certs/ca/ca.key -CAcreateserial -out certs/platform-engineer/platform-engineer1.crt -days 360
+certs/platform-engineer1/platform-engineer1.crt: certs/platform-engineer1/platform-engineer1.csr certs/ca/ca.crt certs/ca/ca.key
+	openssl x509 -req -in certs/platform-engineer1/platform-engineer1.csr -CA certs/ca/ca.crt -CAkey certs/ca/ca.key -CAcreateserial -out certs/platform-engineer1/platform-engineer1.crt -days 360
 
 .PHONY: clean-certs
 clean-certs:
@@ -423,9 +446,9 @@ clean-certs:
 	rm -rf certs/platform-engineer
 
 .PHONY: generate-platform-engineer1-kubeconfig
-generate-platform-engineer1-kubeconfig: certs/platform-engineer/platform-engineer1.crt envsubst
-	KIND_CLUSTER_NAME=$(KIND_CLUSTER_NAME) USER_NAME=platform-engineer1 USER_CRT=$$(cat certs/platform-engineer/platform-engineer1.crt | base64) USER_KEY=$$(cat certs/platform-engineer/platform-engineer1.key | base64)  CA_CRT=$$(cat certs/ca/ca.crt | base64) CLUSTER_HOST_PORT=$$(docker port $(KIND_CLUSTER_NAME)-control-plane 6443) $(ENVSUBST) -i certs/kubeconfig-template.yaml > certs/platform-engineer/kubeconfig.yaml
-	@echo "Config exported to certs/platform-engineer/kubeconfig.yaml"
+generate-platform-engineer1-kubeconfig: certs/platform-engineer1/platform-engineer1.crt envsubst
+	KIND_CLUSTER_NAME=$(KIND_CLUSTER_NAME) USER_NAME=platform-engineer1 USER_CRT=$$(cat certs/platform-engineer1/platform-engineer1.crt | base64) USER_KEY=$$(cat certs/platform-engineer1/platform-engineer1.key | base64)  CA_CRT=$$(cat certs/ca/ca.crt | base64) CLUSTER_HOST_PORT=$$(docker port $(KIND_CLUSTER_NAME)-control-plane 6443) $(ENVSUBST) -i certs/kubeconfig-template.yaml > certs/platform-engineer1/kubeconfig.yaml
+	@echo "Config exported to certs/platform-engineer1/kubeconfig.yaml"
 
 .PHONY: helm-package
 helm-package: $(CHARTS_PACKAGE_DIR) .check-binary-helm

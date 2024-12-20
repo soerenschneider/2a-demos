@@ -1,4 +1,4 @@
-kubeconfig
+kubeconfigs
 charts/
 bin
 
@@ -15,4 +15,4 @@ vendor
 mkdocs
 
 certs/ca
-certs/platform-engineer
+certs/platform-engineer1
