@@ -12,7 +12,7 @@ All demos in here provide their own complete ClusterTemplates and ServiceTemplat
 
 The Setup part for Demos is assumed to be created once before an actual demo is given.
 
-Please make sure that docker is installed on your machine! It's required to run local kind cluster.
+To get the full list of commands run `make help`.
 
 ### General Setup
 
@@ -20,7 +20,9 @@ Please make sure that docker is installed on your machine! It's required to run 
     ```shell
     make bootstrap-kind-cluster
     ```
-    You could give it another name by specifying the `KIND_CLUSTER_NAME` environment variable.
+    You could give it another name by specifying the `KIND_CLUSTER_NAME` environment variable. 
+    
+    For detailed explanation, please refer to the [documentation](./documentation/1-general-setup-bootstrap-kind-cluster.md).
 
 2. Install 2A into kind cluster:
     ```shell
@@ -31,24 +33,32 @@ Please make sure that docker is installed on your machine! It's required to run 
 3. Monitor the installation of 2A:
     ```shell
     PATH=$PATH:./bin kubectl get management hmc -o go-template='{{range $key, $value := .status.components}}{{$key}}: {{if $value.success}}{{$value.success}}{{else}}{{$value.error}}{{end}}{{"\n"}}{{end}}'
-
-   ```
-   If the installation of 2a succeeded, the output should look as follows
-   ```
-   capi: true
-   cluster-api-provider-aws: true
-   cluster-api-provider-azure: true
-   cluster-api-provider-vsphere: true
-   hmc: true
-   k0smotron: true
-   projectsveltos: true
-   ```
+    ```
+    If the installation of 2a succeeded, the output should look as follows
+    ```
+    capi: true
+    cluster-api-provider-aws: true
+    cluster-api-provider-azure: true
+    cluster-api-provider-vsphere: true
+    hmc: true
+    k0smotron: true
+    projectsveltos: true
+    ```
+    For detailed explanation, please refer to the [documentation](./documentation/2-general-setup-deploy-2a.md).
 
 4. Install the Demo Helm Repo into 2A:
     ```shell
     make setup-helmrepo
     ```
-    This step adds a [`HelmRepository` resource](https://fluxcd.io/flux/components/source/helmrepositories/) to the cluster that contains Helm charts for this demo.
+    This step deploys simple local OCI Helm registry and adds a [`HelmRepository` resource](https://fluxcd.io/flux/components/source/helmrepositories/) to the cluster that contains Helm charts for this demo.
+
+    For detailed explanation, please refer to the [documentation](./documentation/3-general-setup-helmrepo-setup.md).
+
+5. Push Helm charts with custom Cluster and Service Templates
+    ```
+    make push-helm-charts
+    ```
+
 
 ### Infra Setup
 

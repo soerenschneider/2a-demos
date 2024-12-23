@@ -1,8 +1,64 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helm-registry
+  namespace: $TESTING_NAMESPACE
+spec:
+  selector:
+    matchLabels:
+      run: helm-registry
+  template:
+    metadata:
+      labels:
+        run: helm-registry
+    spec:
+      containers:
+      - image: registry:2
+        name: helm-registry
+        ports:
+        - containerPort: $HELM_REGISTRY_INTERNAL_PORT
+      volumes:
+        - name: registry-storage
+          persistentVolumeClaim:
+            claimName: helm-registry-storage
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: helm-registry-storage
+  namespace: $TESTING_NAMESPACE
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard # kind local-path provisioner
+  resources:
+    requests:
+      storage: 50Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: helm-registry
+  namespace: $TESTING_NAMESPACE
+spec:
+  type: NodePort
+  ports:
+  - port: $HELM_REGISTRY_INTERNAL_PORT
+    protocol: TCP
+    targetPort: $HELM_REGISTRY_INTERNAL_PORT
+    nodePort: $HELM_REGISTRY_EXTERNAL_PORT
+  selector:
+    run: helm-registry
+
+---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: 2a-demos
-  namespace: hmc-system
+  namespace: $TESTING_NAMESPACE
   labels:
     hmc.mirantis.com/managed: "true"
 spec:
@@ -10,4 +66,4 @@ spec:
   interval: 10m0s
   provider: generic
   type: oci
-  url: oci://ghcr.io/mirantis/2a-demos/charts
+  url: oci://helm-registry.$TESTING_NAMESPACE.svc.cluster.local:5000/helm-charts
