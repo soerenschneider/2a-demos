@@ -55,7 +55,7 @@ Please make sure that docker is installed on your machine! It's required to run 
 As next you need to decide into which infrastructure you would like to install the Demo clusters. This Demo Repo has support for the following Infra Providers (more to follow in the future):
 
 - AWS
-
+- Azure
 
 #### AWS Setup
 
@@ -70,6 +70,22 @@ This assumes that you already have configured the required [AWS IAM Roles](https
 2. Install Credentials into 2A:
     ```shell
     make setup-aws-creds
+    ```
+
+#### Azure Setup
+
+This assumes that you already have configured the required [Azure providers](https://mirantis.github.io/project-2a-docs/quick-start/azure/#register-resource-providers) and created a [Azure Service Principal](https://mirantis.github.io/project-2a-docs/quick-start/azure/#step-2-create-a-service-principal-sp).
+
+1. Export Azure Service Principal keys as environment variables:
+    ```
+    export AZURE_SP_PASSWORD=<Service Principal password>
+    export AZURE_SP_APP_ID=<Service Principal App ID>
+    export AZURE_SP_TENANT_ID=<Service Principal Tenant ID>
+    ```
+
+2. Install Credentials into 2A:
+    ```
+    make setup-azure-creds
     ```
 
 ### Demo Cluster Setup
