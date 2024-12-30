@@ -28,10 +28,11 @@ Please make sure that docker is installed on your machine! It's required to run 
     ```
     The Demos in this repo require at least 2A v0.0.5 or newer. You can change the version of 2A by specifying the `HMC_VERSION` environment variable.
 
-3. Monitor the installation of 2A (you probably will need to install `jq` to execute this command):
+3. Monitor the installation of 2A:
     ```shell
-    PATH=$PATH:./bin kubectl get management hmc -o json | jq -r '.status.components | to_entries[] | "\(.key): \(.value.success // .value.error)"'
-    ```
+    PATH=$PATH:./bin kubectl get management hmc -o go-template='{{range $key, $value := .status.components}}{{$key}}: {{if $value.success}}{{$value.success}}{{else}}{{$value.error}}{{end}}{{"\n"}}{{end}}'
+
+   ```
    If the installation of 2a succeeded, the output should look as follows
    ```
    capi: true
