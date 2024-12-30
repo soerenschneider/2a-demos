@@ -58,13 +58,13 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	@mkdir -p $(LOCALBIN)
 
-KIND ?= PATH=$(LOCALBIN):$$PATH kind
+KIND ?= PATH=$(LOCALBIN):$(PATH) kind
 KIND_VERSION ?= 0.25.0
 
-HELM ?= PATH=$(LOCALBIN):$$PATH helm
+HELM ?= PATH=$(LOCALBIN):$(PATH) helm
 HELM_VERSION ?= v3.15.1
 
-KUBECTL ?= PATH=$(LOCALBIN):$$PATH kubectl
+KUBECTL ?= PATH=$(LOCALBIN):$(PATH) kubectl
 
 # installs binary locally
 $(LOCALBIN)/%: $(LOCALBIN)
