@@ -427,15 +427,15 @@ certs/platform-engineer1/platform-engineer1.csr: certs/platform-engineer1/platfo
 certs/platform-engineer1/platform-engineer1.crt: certs/platform-engineer1/platform-engineer1.csr certs/ca/ca.crt certs/ca/ca.key
 	openssl x509 -req -in certs/platform-engineer1/platform-engineer1.csr -CA certs/ca/ca.crt -CAkey certs/ca/ca.key -CAcreateserial -out certs/platform-engineer1/platform-engineer1.crt -days 360
 
-##@ Tear down managed cluster
+##@ Cleanup
+
 .PHONY: cleanup-clusters
-cleanup-clusters: clean-certs
+cleanup-clusters: clean-certs ## Tear down managed cluster
 	# use the explicit --context option to be specific about which cluster should be used to prevent disaster
 	kubectl --context=kind-$(KIND_CLUSTER_NAME) delete managedclusters.hmc.mirantis.com -n $(HMC_NAMESPACE) --all
 
-##@ Tear down management cluster
 .PHONY: cleanup
-cleanup: cleanup-clusters clean-certs
+cleanup: cleanup-clusters clean-certs ## Tear down management cluster
 	@if $(KIND) get clusters | grep -q $(KIND_CLUSTER_NAME); then\
 		$(KIND) kind delete cluster --name=$(KIND_CLUSTER_NAME);\
 	else\
