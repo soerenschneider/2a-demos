@@ -8,7 +8,6 @@ TESTING_NAMESPACE ?= hmc-system
 TARGET_NAMESPACE ?= blue
 KIND_CLUSTER_NAME ?= hmc-management-local
 
-
 OPENSSL_DOCKER_IMAGE ?= alpine/openssl:3.3.2
 
 TEMPLATES_DIR := templates
@@ -18,9 +17,9 @@ $(CHARTS_PACKAGE_DIR): | $(LOCALBIN)
 	rm -rf $(CHARTS_PACKAGE_DIR)
 	mkdir -p $(CHARTS_PACKAGE_DIR)
 
-REGISTRY_PORT ?= 5001
-REGISTRY_REPO ?= oci://127.0.0.1:$(REGISTRY_PORT)/charts
-REGISTRY_IS_OCI = $(shell echo $(REGISTRY_REPO) | grep -q oci && echo true || echo false)
+HELM_REGISTRY_INTERNAL_PORT ?= 5000
+HELM_REGISTRY_EXTERNAL_PORT ?= 30500
+REGISTRY_REPO ?= oci://127.0.0.1:$(HELM_REGISTRY_EXTERNAL_PORT)/helm-charts
 
 ##@ General
 
@@ -68,6 +67,8 @@ HELM_VERSION ?= v3.15.1
 
 KUBECTL ?= PATH=$(LOCALBIN):$(PATH) kubectl
 
+DOCKER_VERSION ?= 27.4.1
+
 # installs binary locally
 $(LOCALBIN)/%: $(LOCALBIN)
 	@curl -sLo $(LOCALBIN)/$(binary) $(url);\
@@ -79,7 +80,20 @@ $(LOCALBIN)/%: $(LOCALBIN)
 		|| (echo "Can't find the $(binary) in path, installing it locally" && make $(LOCALBIN)/$(binary))
 
 .check-binary-docker:
-	@which docker $ > /dev/null || (echo "Please install docker before proceeding" && exit 1)
+	@if ! which docker $ > /dev/null; then \
+		if [ "$(OS)" = "linux" ]; then \
+			curl -sLO https://download.docker.com/linux/static/stable/$(shell uname -m)/docker-$(DOCKER_VERSION).tgz;\
+			tar xzvf docker-$(DOCKER_VERSION).tgz; \
+			sudo cp docker/* /usr/bin/ ; \
+			echo "Starting docker daemon..." ; \
+			sudo dockerd > /dev/null 2>&1 & sudo groupadd docker ; \
+			sudo usermod -aG docker $(shell whoami) ; \
+			newgrp docker ; \
+			echo "Docker engine installed and started"; \
+		else \
+			echo "Please install docker before proceeding. If your work on machine with MacOS, check this installation guide: https://docs.docker.com/desktop/setup/install/mac-install/" && exit 1; \
+		fi; \
+	fi;
 
 %kind: binary = kind
 %kind: url = "https://kind.sigs.k8s.io/dl/v$(KIND_VERSION)/kind-$(OS)-$(ARCH)"
@@ -101,18 +115,30 @@ $(LOCALBIN)/helm: | $(LOCALBIN)
 
 ##@ General Setup
 
+KIND_CLUSTER_CONFIG_PATH ?= $(LOCALBIN)/kind-cluster.yaml
+$(KIND_CLUSTER_CONFIG_PATH): $(LOCALBIN)
+	@cat setup/kind-cluster.yaml | envsubst > $(LOCALBIN)/kind-cluster.yaml
+
 .PHONY: bootstrap-kind-cluster
-bootstrap-kind-cluster: .check-binary-docker .check-binary-kind .check-binary-kubectl ## Provision local kind cluster
+bootstrap-kind-cluster: .check-binary-docker .check-binary-kind .check-binary-kubectl $(KIND_CLUSTER_CONFIG_PATH) ## Provision local kind cluster
+bootstrap-kind-cluster: ## Provision local kind cluster
 	@if $(KIND) get clusters | grep -q $(KIND_CLUSTER_NAME); then\
 		echo "$(KIND_CLUSTER_NAME) kind cluster already installed";\
 	else\
-		$(KIND) create cluster --name=$(KIND_CLUSTER_NAME);\
+		$(KIND) create cluster --name=$(KIND_CLUSTER_NAME) --config=$(KIND_CLUSTER_CONFIG_PATH);\
 	fi
 	@$(KUBECTL) config use-context kind-$(KIND_CLUSTER_NAME)
 
 .PHONY: deploy-2a
 deploy-2a: .check-binary-helm ## Deploy 2A to the management cluster
 	$(HELM) install hmc $(HMC_REPO) --version $(HMC_VERSION) -n $(HMC_NAMESPACE) --create-namespace
+
+.PHONY: setup-helmrepo
+setup-helmrepo: ## Deploy local helm repository and register it in 2A
+	@envsubst < setup/helmRepository.yaml | $(KUBECTL) apply -f -
+
+.PHONY: push-helm-charts
+push-helm-charts: helm-push ## Push helm charts with custom Cluster and Service templates
 
 ##@ Infra Setup
 
@@ -139,11 +165,6 @@ setup-azure-creds: .check-variable-azure-sp-password .check-variable-azure-sp-ap
 	envsubst < setup/azure-credentials.yaml | kubectl apply -f -
 
 ##@ TBD
-
-.PHONY: setup-helmrepo
-setup-helmrepo:
-	kubectl apply -f setup/helmRepository.yaml
-
 
 # install-template will install a given template
 # $1 - yaml file
@@ -473,38 +494,16 @@ package-chart-%: lint-chart-%
 
 .PHONY: helm-push
 helm-push: helm-package
-	if [ ! $(REGISTRY_IS_OCI) ]; then \
-	    repo_flag="--repo"; \
-	fi; \
-	for chart in $(CHARTS_PACKAGE_DIR)/*.tgz; do \
+	@for chart in $(CHARTS_PACKAGE_DIR)/*.tgz; do \
 		base=$$(basename $$chart .tgz); \
 		chart_version=$$(echo $$base | grep -o "v\{0,1\}[0-9]\+\.[0-9]\+\.[0-9].*"); \
 		chart_name="$${base%-"$$chart_version"}"; \
 		echo "Verifying if chart $$chart_name, version $$chart_version already exists in $(REGISTRY_REPO)"; \
-		if $(REGISTRY_IS_OCI); then \
-		  echo $(HELM) pull $$repo_flag $(REGISTRY_REPO)/$$chart_name --version $$chart_version --destination /tmp; \
-			$(HELM) pull $$repo_flag $(REGISTRY_REPO)/$$chart_name --version $$chart_version --destination /tmp; \
-			chart_exists=$$($(HELM) pull $$repo_flag $(REGISTRY_REPO)/$$chart_name --version $$chart_version --destination /tmp 2>&1 | grep "not found" || true); \
-		else \
-			echo $(HELM) pull $$repo_flag $(REGISTRY_REPO) $$chart_name --version $$chart_version --destination /tmp; \
-			$(HELM) pull $$repo_flag $(REGISTRY_REPO) $$chart_name --version $$chart_version --destination /tmp; \
-			chart_exists=$$($(HELM) pull $$repo_flag $(REGISTRY_REPO) $$chart_name --version $$chart_version --destination /tmp 2>&1 | grep "not found" || true); \
-		fi; \
+		chart_exists=$$($(HELM) show chart $(REGISTRY_REPO)/$$chart_name --version $$chart_version 2>&1 | grep "failed to download" || true); \
 		if [ -z "$$chart_exists" ]; then \
 			echo "Chart $$chart_name version $$chart_version already exists in the repository."; \
 		else \
-			if $(REGISTRY_IS_OCI); then \
-				echo "Pushing $$chart to $(REGISTRY_REPO)"; \
-				$(HELM) push "$$chart" $(REGISTRY_REPO); \
-			else \
-				if [ ! $$REGISTRY_USERNAME ] && [ ! $$REGISTRY_PASSWORD ]; then \
-					echo "REGISTRY_USERNAME and REGISTRY_PASSWORD must be populated to push the chart to an HTTPS repository"; \
-					exit 1; \
-				else \
-					$(HELM) repo add hmc $(REGISTRY_REPO); \
-					echo "Pushing $$chart to $(REGISTRY_REPO)"; \
-					$(HELM) cm-push "$$chart" $(REGISTRY_REPO) --username $$REGISTRY_USERNAME --password $$REGISTRY_PASSWORD; \
-				fi; \
-			fi; \
+			echo "Pushing $$chart to $(REGISTRY_REPO)"; \
+			$(HELM) push "$$chart" $(REGISTRY_REPO); \
 		fi; \
 	done
