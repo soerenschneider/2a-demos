@@ -2,8 +2,8 @@
 .EXPORT_ALL_VARIABLES:
 
 HMC_NAMESPACE ?= hmc-system
-HMC_REPO ?= oci://ghcr.io/mirantis/hmc/charts/hmc
-HMC_VERSION ?= 0.0.5
+HMC_REPO ?= oci://ghcr.io/k0rdent/kcm/charts/hmc
+HMC_VERSION ?= 0.0.6
 TESTING_NAMESPACE ?= hmc-system
 TARGET_NAMESPACE ?= blue
 KIND_CLUSTER_NAME ?= hmc-management-local
