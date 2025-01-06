@@ -238,6 +238,10 @@ apply-clustertemplate-demo-aws-standalone-cp-0.0.1: SHOW_DIFF = false
 apply-clustertemplate-demo-aws-standalone-cp-0.0.1: template_path = templates/cluster/demo-aws-standalone-cp-0.0.1.yaml
 apply-clustertemplate-demo-aws-standalone-cp-0.0.1: ## Deploy custom demo-aws-standalone-cp-0.0.1 ClusterTemplate
 
+apply-clustertemplate-demo-azure-standalone-cp-0.0.1: SHOW_DIFF = false
+apply-clustertemplate-demo-azure-standalone-cp-0.0.1: template_path = templates/cluster/demo-azure-standalone-cp-0.0.1.yaml
+apply-clustertemplate-demo-azure-standalone-cp-0.0.1: ## Deploy custom demo-aws-standalone-cp-0.0.1 ClusterTemplate
+
 apply-managed-cluster-aws-test1-0.0.1: CLUSTERNAME = test1
 apply-managed-cluster-aws-test1-0.0.1: template_path = managedClusters/aws/0.0.1.yaml
 apply-managed-cluster-aws-test1-0.0.1: ## Deploy managed cluster test1 version 0.0.1 to AWS
