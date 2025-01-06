@@ -7,7 +7,7 @@ spec:
   template: demo-aws-standalone-cp-0.0.2
   credential: aws-cluster-identity-cred
   config:
-    region: us-east-2
+    region: ${AWS_REGION}
     publicIP: true
     controlPlaneNumber: 1
     workersNumber: 2

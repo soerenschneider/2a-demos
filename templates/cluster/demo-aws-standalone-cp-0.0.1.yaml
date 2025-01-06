@@ -2,7 +2,7 @@ apiVersion: hmc.mirantis.com/v1alpha1
 kind: ClusterTemplate
 metadata:
   name: demo-aws-standalone-cp-0.0.1
-  namespace: hmc-system
+  namespace: ${NAMESPACE}
 spec:
   helm:
     chartSpec:
@@ -25,7 +25,7 @@ apiVersion: hmc.mirantis.com/v1alpha1
 kind: ClusterTemplateChain
 metadata:
   name: demo-aws-standalone-cp-0.0.1
-  namespace: hmc-system
+  namespace: ${NAMESPACE}
 spec:
   supportedTemplates:
     - name: demo-aws-standalone-cp-0.0.1

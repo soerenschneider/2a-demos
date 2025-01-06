@@ -8,6 +8,6 @@ spec:
     matchLabels:
       app.kubernetes.io/managed-by: Helm
   services:
-    - template: kyverno-3-2-6
+    - template: demo-kyverno-3.2.6
       name: kyverno
       namespace: kyverno

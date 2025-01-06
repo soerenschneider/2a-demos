@@ -2,7 +2,7 @@ apiVersion: hmc.mirantis.com/v1alpha1
 kind: ServiceTemplate
 metadata:
   name: demo-ingress-nginx-4.11.3
-  namespace: hmc-system
+  namespace: ${NAMESPACE}
 spec:
   helm:
     chartSpec:
@@ -17,7 +17,7 @@ apiVersion: hmc.mirantis.com/v1alpha1
 kind: ServiceTemplateChain
 metadata:
   name: demo-ingress-nginx-4.11.3
-  namespace: hmc-system
+  namespace: ${NAMESPACE}
 spec:
   supportedTemplates:
     - name: demo-ingress-nginx-4.11.0
