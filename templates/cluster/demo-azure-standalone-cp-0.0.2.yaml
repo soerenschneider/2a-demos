@@ -1,0 +1,35 @@
+---
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ClusterTemplate
+metadata:
+  name: demo-azure-standalone-cp-0.0.2
+  namespace: ${NAMESPACE}
+spec:
+  helm:
+    chartSpec:
+      chart: demo-azure-standalone-cp
+      version: 0.0.2
+      interval: 10m0s
+      sourceRef:
+        kind: HelmRepository
+        name: 2a-demos
+  providers:
+  - bootstrap-k0smotron
+  - control-plane-k0smotron
+  - infrastructure-azure
+  providerContracts:
+    bootstrap-k0smotron: v1beta1
+    control-plane-k0smotron: v1beta1
+    infrastructure-aws: v1beta2
+---
+apiVersion: hmc.mirantis.com/v1alpha1
+kind: ClusterTemplateChain
+metadata:
+  name: demo-azure-standalone-cp-0.0.2
+  namespace: ${NAMESPACE}
+spec:
+  supportedTemplates:
+    - name: demo-azure-standalone-cp-0.0.1
+      availableUpgrades:
+        - name: demo-azure-standalone-cp-0.0.2
+    - name: demo-azure-standalone-cp-0.0.2
