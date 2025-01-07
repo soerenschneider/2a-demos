@@ -11,7 +11,7 @@ spec:
       interval: 10m0s
       sourceRef:
         kind: HelmRepository
-        name: 2a-demos
+        name: k0rdent-demos
 ---
 apiVersion: hmc.mirantis.com/v1alpha1
 kind: ServiceTemplateChain

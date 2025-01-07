@@ -1,5 +1,5 @@
 apiVersion: hmc.mirantis.com/v1alpha1
-kind: ManagedCluster
+kind: ClusterDeployment
 metadata:
   name: ${NAMESPACE}-azure-${CLUSTERNAME}
   namespace: ${NAMESPACE}
@@ -18,7 +18,3 @@ spec:
     clusterIdentity:
       name: azure-cluster-identity
       namespace: hmc-system
-  services:
-    - template: demo-ingress-nginx-4.11.0
-      name: ingress-nginx
-      namespace: ingress-nginx
