@@ -125,8 +125,8 @@ This assumes that you already have configured the required [Azure providers](htt
     ```
     The output should be similar to:
     ```
-    NAME               READY   DESCRIPTION
-    azure-credential   true    Basic Azure credentials
+    NAME                          READY   DESCRIPTION
+    azure-cluster-identity-cred   true    Azure credentials
     ```
 
 ### Demo Cluster Setup

@@ -232,7 +232,7 @@ setup-azure-creds: .check-variable-azure-sp-password .check-variable-azure-sp-ap
 setup-azure-creds: ## Setup Azure credentials
 	envsubst < setup/azure-credentials.yaml | kubectl apply -f -
 
-get-creds-azure: creds_name = azure-credential
+get-creds-azure: creds_name = azure-cluster-identity-cred
 get-creds-azure: ## Get Azure credentials info
 
 ## Common targets and functions
@@ -276,6 +276,10 @@ apply-clustertemplate-demo-aws-standalone-cp-0.0.1: SHOW_DIFF = false
 apply-clustertemplate-demo-aws-standalone-cp-0.0.1: template_path = templates/cluster/demo-aws-standalone-cp-0.0.1.yaml
 apply-clustertemplate-demo-aws-standalone-cp-0.0.1: ## Deploy custom demo-aws-standalone-cp-0.0.1 ClusterTemplate
 
+apply-clustertemplate-demo-azure-standalone-cp-0.0.1: SHOW_DIFF = false
+apply-clustertemplate-demo-azure-standalone-cp-0.0.1: template_path = templates/cluster/demo-azure-standalone-cp-0.0.1.yaml
+apply-clustertemplate-demo-azure-standalone-cp-0.0.1: ## Deploy custom demo-azure-standalone-cp-0.0.1 ClusterTemplate
+
 apply-cluster-deployment-aws-test1-0.0.1: CLUSTERNAME = test1
 apply-cluster-deployment-aws-test1-0.0.1: template_path = clusterDeployments/aws/0.0.1.yaml
 apply-cluster-deployment-aws-test1-0.0.1: ## Deploy cluster deployment test1 version 0.0.1 to AWS
@@ -301,6 +305,10 @@ get-kubeconfig-aws-test2: ## Get kubeconfig for the cluster test2
 apply-clustertemplate-demo-aws-standalone-cp-0.0.2: SHOW_DIFF = false
 apply-clustertemplate-demo-aws-standalone-cp-0.0.2: template_path = templates/cluster/demo-aws-standalone-cp-0.0.2.yaml
 apply-clustertemplate-demo-aws-standalone-cp-0.0.2: ## Deploy custom demo-aws-standalone-cp-0.0.2 ClusterTemplate
+
+apply-clustertemplate-demo-azure-standalone-cp-0.0.2: SHOW_DIFF = false
+apply-clustertemplate-demo-azure-standalone-cp-0.0.2: template_path = templates/cluster/demo-azure-standalone-cp-0.0.2.yaml
+apply-clustertemplate-demo-azure-standalone-cp-0.0.2: ## Deploy custom demo-azure-standalone-cp-0.0.2 ClusterTemplate
 
 get-avaliable-upgrades: ## Get available upgrades for all managed clusters
 	@$(KUBECTL) -n $(TESTING_NAMESPACE) get clusterdeployment.hmc.mirantis.com -o go-template='{{ range $$_,$$cluster := .items }}Cluster {{ $$cluster.metadata.name}} available upgrades: {{"\n"}}{{ range $$_,$$upgrade := $$cluster.status.availableUpgrades}}{{"  - "}}{{ $$upgrade }}{{"\n"}}{{ end }}{{"\n"}}{{ end }}'
