@@ -247,7 +247,7 @@ apply-%:
 
 watch-%: NAMESPACE = $(TESTING_NAMESPACE)
 watch-%:
-	@$(KUBECTL) get -n $(NAMESPACE) clusterdeployment $(NAMESPACE)-aws-$(CLUSTERNAME) --watch
+	@$(KUBECTL) get -n $(NAMESPACE) clusterdeployment $(NAMESPACE)-$(PROVIDER)-$(CLUSTERNAME) --watch
 
 KUBECONFIGS_DIR = $(shell pwd)/kubeconfigs
 $(KUBECONFIGS_DIR):
@@ -289,7 +289,12 @@ apply-cluster-deployment-azure-test1-0.0.1: template_path = clusterDeployments/a
 apply-cluster-deployment-azure-test1-0.0.1: ## Deploy cluster deployment test1 version 0.0.1 to Azure
 
 watch-aws-test1: CLUSTERNAME = test1
+watch-aws-test1: PROVIDER = aws
 watch-aws-test1: ## Monitor the provisioning process of the cluster deployment test1 in AWS
+
+watch-azure-test1: CLUSTERNAME = test1
+watch-azure-test1: PROVIDER = azure
+watch-azure-test1: ## Monitor the provisioning process of the cluster deployment test1 in Azure
 
 get-kubeconfig-aws-test1: CLUSTERNAME = test1
 get-kubeconfig-aws-test1: ## Get kubeconfig for the cluster test1
@@ -303,7 +308,12 @@ apply-cluster-deployment-azure-test2-0.0.1: template_path = clusterDeployments/a
 apply-cluster-deployment-azure-test2-0.0.1: ## Deploy cluster deployment test2 version 0.0.1 to Azure
 
 watch-aws-test2: CLUSTERNAME = test2
+watch-aws-test1: PROVIDER = aws
 watch-aws-test2: ## Monitor the provisioning process of the cluster deployment test2 in AWS
+
+watch-azure-test2: CLUSTERNAME = test2
+watch-azure-test2: PROVIDER = azure
+watch-azure-test2: ## Monitor the provisioning process of the cluster deployment test2 in Azure
 
 get-kubeconfig-aws-test2: CLUSTERNAME = test2
 get-kubeconfig-aws-test2: ## Get kubeconfig for the cluster test2
