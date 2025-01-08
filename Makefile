@@ -284,6 +284,11 @@ apply-cluster-deployment-aws-test1-0.0.1: CLUSTERNAME = test1
 apply-cluster-deployment-aws-test1-0.0.1: template_path = clusterDeployments/aws/0.0.1.yaml
 apply-cluster-deployment-aws-test1-0.0.1: ## Deploy cluster deployment test1 version 0.0.1 to AWS
 
+apply-cluster-deployment-azure-test1-0.0.1: CLUSTERNAME = test1
+apply-cluster-deployment-azure-test1-0.0.1: template_path = clusterDeployments/azure/1-0.0.1.yaml
+apply-cluster-deployment-azure-test1-0.0.1: ## Deploy cluster deployment test1 version 0.0.1 to Azure
+# TODO: Make sure envsubst is called
+
 watch-aws-test1: CLUSTERNAME = test1
 watch-aws-test1: ## Monitor the provisioning process of the cluster deployment test1 in AWS
 
