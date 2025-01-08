@@ -10,7 +10,7 @@ spec:
     controlPlaneNumber: 1
     workersNumber: 2
     location: "westus"
-    subscriptionID: d8c00bed-c0a8-4ae2-ba65-dbd7fe1c5139
+    subscriptionID: ${AZURE_SUBSCRIPTION_ID} 
     controlPlane:
       vmSize: Standard_A4_v2
     worker:

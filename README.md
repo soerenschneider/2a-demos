@@ -112,6 +112,7 @@ This assumes that you already have configured the required [Azure providers](htt
     export AZURE_SP_PASSWORD=<Service Principal password>
     export AZURE_SP_APP_ID=<Service Principal App ID>
     export AZURE_SP_TENANT_ID=<Service Principal Tenant ID>
+    export AZURE_SUBSCRIPTION_ID=<Azure's subscription ID>
     ```
 
 2. Install Credentials into k0rdent:
