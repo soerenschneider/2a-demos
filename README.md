@@ -8,6 +8,18 @@ It includes scripts and implementation examples for basic and advanced usage for
 
 All demos in here provide their own complete ClusterTemplates and ServiceTemplates and do not use the included k0rdent templates at all. This is done on one side to not be depending on k0rdent included templates and on the other side shows how custom and BYO (bring your own) templates can be used. Learn more about [BYO Templates in the k0rdent documentation](https://k0rdent.github.io/docs/template/byo-templates/).
 
+## Table of Contents
+
+1. [Setup](#setup)
+   1. [General setup](#general-setup)
+   1. [Infrastructure setup](#infra-setup)
+      1. [AWS setup](#aws-setup)
+      1. [Azure setup](#azure-setup)
+1. [Demo 1: Standalone Cluster Deployment](#demo-1-standalone-cluster-deployment)
+1. [Demo 2: Single Standalone Cluster Upgrade](#demo-2-single-standalone-cluster-upgrade)
+1. [Demo 3: Install ServiceTemplate into single cluster](#demo-3-install-servicetemplate-into-single-cluster)
+1. [Demo 4: Install ServiceTemplate into multiple Cluster](#demo-4-install-servicetemplate-into-multiple-cluster)
+
 ## Setup
 
 The Setup part for Demos is assumed to be created once before an actual demo is given.
@@ -399,7 +411,6 @@ In order to run this demo you need [`Demo 1`](#demo-1-standalone-cluster-deploym
           status: "True"
           type: ingress-nginx.ingress-nginx/SveltosHelmReleaseReady
     ```
-
 
 ## Demo 4: Install ServiceTemplate into multiple Cluster
 
