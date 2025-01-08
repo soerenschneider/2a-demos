@@ -298,6 +298,10 @@ apply-cluster-deployment-aws-test2-0.0.1: CLUSTERNAME = test2
 apply-cluster-deployment-aws-test2-0.0.1: template_path = clusterDeployments/aws/0.0.1.yaml
 apply-cluster-deployment-aws-test2-0.0.1: ## Deploy cluster deployment test2 version 0.0.1 to AWS
 
+apply-cluster-deployment-azure-test2-0.0.1: CLUSTERNAME = test2
+apply-cluster-deployment-azure-test2-0.0.1: template_path = clusterDeployments/azure/1-0.0.1.yaml
+apply-cluster-deployment-azure-test2-0.0.1: ## Deploy cluster deployment test2 version 0.0.1 to Azure
+
 watch-aws-test2: CLUSTERNAME = test2
 watch-aws-test2: ## Monitor the provisioning process of the cluster deployment test2 in AWS
 
@@ -319,7 +323,11 @@ get-avaliable-upgrades: ## Get available upgrades for all managed clusters
 
 apply-cluster-deployment-aws-test1-0.0.2: CLUSTERNAME = test1
 apply-cluster-deployment-aws-test1-0.0.2: template_path = clusterDeployments/aws/0.0.2.yaml
-apply-cluster-deployment-aws-test1-0.0.2: ## Upgrade cluster deployment test2 to version 0.0.2
+apply-cluster-deployment-aws-test1-0.0.2: ## Upgrade cluster deployment test1 to version 0.0.2
+
+apply-cluster-deployment-azure-test1-0.0.2: CLUSTERNAME = test1
+apply-cluster-deployment-azure-test1-0.0.2: template_path = clusterDeployments/azure/1-0.0.2.yaml
+apply-cluster-deployment-azure-test1-0.0.2: ## Upgrade cluster deployment test1 to version 0.0.2
 
 ##@ Demo 3
 
