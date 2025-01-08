@@ -10,11 +10,12 @@ spec:
     controlPlaneNumber: 1
     workersNumber: 2
     location: "westus"
-    subscriptionID: 827ac6be-1c0a-47d7-a218-01d387fcf9f1
+    # TODO: tempalte subscription id
+    subscriptionID: d8c00bed-c0a8-4ae2-ba65-dbd7fe1c5139
     controlPlane:
       vmSize: Standard_A4_v2
     worker:
       vmSize: Standard_A4_v2
     clusterIdentity:
       name: azure-cluster-identity
-      namespace: hmc-system
+      namespace: k0rdent
