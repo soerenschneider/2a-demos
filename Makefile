@@ -226,6 +226,8 @@ get-creds-aws: ## Get AWS credentials info
 .%-azure-sp-app-id: var_description = Azure Service Principal App ID
 .%-azure-sp-tenant-id: var_name = AZURE_SP_TENANT_ID
 .%-azure-sp-tenant-id: var_description = Azure Service Principal Tenant ID
+.%-azure-sp-subscription-id: var_name = AZURE_SUBSCRIPTION_ID
+.%-azure-sp-subscription-id: var_description = Azure Subscription ID
 
 .PHONY: setup-azure-creds
 setup-azure-creds: .check-variable-azure-sp-password .check-variable-azure-sp-app-id .check-variable-azure-sp-tenant-id ## Setup Azure credentials
@@ -284,6 +286,7 @@ apply-cluster-deployment-aws-test1-0.0.1: CLUSTERNAME = test1
 apply-cluster-deployment-aws-test1-0.0.1: template_path = clusterDeployments/aws/0.0.1.yaml
 apply-cluster-deployment-aws-test1-0.0.1: ## Deploy cluster deployment test1 version 0.0.1 to AWS
 
+apply-cluster-deployment-azure-test1-0.0.1: .check-variable-azure-sp-subscription-id ## Verify variable is set
 apply-cluster-deployment-azure-test1-0.0.1: CLUSTERNAME = test1
 apply-cluster-deployment-azure-test1-0.0.1: template_path = clusterDeployments/azure/1-0.0.1.yaml
 apply-cluster-deployment-azure-test1-0.0.1: ## Deploy cluster deployment test1 version 0.0.1 to Azure
@@ -303,6 +306,7 @@ apply-cluster-deployment-aws-test2-0.0.1: CLUSTERNAME = test2
 apply-cluster-deployment-aws-test2-0.0.1: template_path = clusterDeployments/aws/0.0.1.yaml
 apply-cluster-deployment-aws-test2-0.0.1: ## Deploy cluster deployment test2 version 0.0.1 to AWS
 
+apply-cluster-deployment-azure-test2-0.0.2: .check-variable-azure-sp-subscription-id ## Verify variable is set
 apply-cluster-deployment-azure-test2-0.0.1: CLUSTERNAME = test2
 apply-cluster-deployment-azure-test2-0.0.1: template_path = clusterDeployments/azure/1-0.0.1.yaml
 apply-cluster-deployment-azure-test2-0.0.1: ## Deploy cluster deployment test2 version 0.0.1 to Azure
@@ -335,6 +339,7 @@ apply-cluster-deployment-aws-test1-0.0.2: CLUSTERNAME = test1
 apply-cluster-deployment-aws-test1-0.0.2: template_path = clusterDeployments/aws/0.0.2.yaml
 apply-cluster-deployment-aws-test1-0.0.2: ## Upgrade cluster deployment test1 to version 0.0.2
 
+apply-cluster-deployment-azure-test1-0.0.2: .check-variable-azure-sp-subscription-id ## Verify variable is set
 apply-cluster-deployment-azure-test1-0.0.2: CLUSTERNAME = test1
 apply-cluster-deployment-azure-test1-0.0.2: template_path = clusterDeployments/azure/1-0.0.2.yaml
 apply-cluster-deployment-azure-test1-0.0.2: ## Upgrade cluster deployment test1 to version 0.0.2
