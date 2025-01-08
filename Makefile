@@ -232,7 +232,7 @@ setup-azure-creds: .check-variable-azure-sp-password .check-variable-azure-sp-ap
 setup-azure-creds: ## Setup Azure credentials
 	envsubst < setup/azure-credentials.yaml | kubectl apply -f -
 
-get-creds-azure: creds_name = azure-credential
+get-creds-azure: creds_name = azure-cluster-identity-cred
 get-creds-azure: ## Get Azure credentials info
 
 ## Common targets and functions
