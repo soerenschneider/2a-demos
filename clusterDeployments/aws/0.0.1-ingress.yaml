@@ -1,10 +1,10 @@
 apiVersion: hmc.mirantis.com/v1alpha1
-kind: ManagedCluster
+kind: ClusterDeployment
 metadata:
   name: ${NAMESPACE}-aws-${CLUSTERNAME}
   namespace: ${NAMESPACE}
 spec:
-  template: demo-aws-standalone-cp-0.0.2
+  template: demo-aws-standalone-cp-0.0.1
   credential: aws-cluster-identity-cred
   config:
     region: ${AWS_REGION}
@@ -15,3 +15,7 @@ spec:
       instanceType: t3.small
     worker:
       instanceType: t3.small
+  services:
+    - template: demo-ingress-nginx-4.11.0
+      name: ingress-nginx
+      namespace: ingress-nginx
