@@ -582,7 +582,7 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
     ```
     This will create the object of type `ClusterDeployment`, same as in [`Demo 1`](#demo-1-standalone-cluster-deployment) but in the `blue` namespace and using the approved and delivered `ClusterTemplate` to that namespace.
 
-3. Monitor the deployment of the cluster and wait when both be in Ready state:
+3. Monitor the deployment of the cluster and wait when it be in Ready state:
     For the first cluster:
     ```shell
     make watch-aws-dev1
@@ -619,7 +619,131 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
 
 ## Demo 9: Approve ServiceTemplate in separate Namespace
 
+1. Approve the `ServiceTemplate` into the blue namespace
+    ```shell
+    make approve-servicetemplatechain-ingress-nginx-4.11.0
+    ```
+
+    Check the status of the `hmc` AccessManagement object:
+    ```shell
+    PATH=$PATH:./bin kubectl -n k0rdent get AccessManagement hmc -o yaml
+    ```
+
+    In the status section you can find information about the `ServiceTemplateChain` that was approved to the target `blue` namespace:
+    ```
+    apiVersion: hmc.mirantis.com/v1alpha1
+    kind: AccessManagement
+    ...
+    status:
+      ...
+      current:
+      - serviceTemplateChains:
+        - demo-ingress-nginx-4.11.0
+        targetNamespaces:
+          list:
+          - blue
+    ```
+
+2. Show that the platform engineer only can see approved clustertemplate and credentials and no other ones:
+    ```shell
+    KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" PATH=$PATH:./bin kubectl get servicetemplates -n blue
+    ```
+
+    Output:
+    ```
+    NAME                        VALID
+    demo-ingress-nginx-4.11.0   true
+    ```
+
+
 ## Demo 10: Use ServiceTemplate in separate Namespace
+
+1. Apply ServiceTemplate to the cluster in blue namespace that was created in [Demo 6](#demo-6-use-approved-clustertemplate-in-separate-namespace) (this will be ran as platform engineer):
+    ```shell
+    make apply-cluster-deployment-aws-dev1-0.0.1-ingress
+    ```
+    This applies the [0.0.1-ingress.yaml](clusterDeployments/aws/0.0.1-ingress.yaml) yaml template. For simplicity the yamls are a full `ClusterDeployment` Object and not just a diff from the original cluster. The command output will show you a diff that explains that the only thing that actually has changed is the `serviceTemplate` key
+
+
+2. Monitor how the ingress-nginx is installed in `dev1` cluster:
+    ```shell
+    watch KUBECONFIG="kubeconfigs/blue-aws-dev1.kubeconfig" PATH=$PATH:./bin kubectl get pods -n ingress-nginx
+    ```
+
+    The final state should be similar to:
+    ```
+    NAME                                        READY   STATUS    RESTARTS   AGE
+    ingress-nginx-controller-86bd747cf9-ds56s   1/1     Running   0          34s
+    ```
+
+    You can also check the services status of the `ClusterDeployment` of object in management cluster:
+
+    ```shell
+    KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" PATH=$PATH:./bin kubectl -n blue get clusterdeployment.hmc.mirantis.com blue-aws-dev1 -o yaml
+    ```
+
+    The output under the `status.services` should contain information about successfully deployed ingress nginx service:
+
+    ```
+    ...
+    status:
+      ...
+      services:
+      - clusterName: blue-aws-dev1
+        clusterNamespace: blue
+        conditions:
+        ...
+        - lastTransitionTime: "2024-12-19T17:24:35Z"
+          message: Release ingress-nginx/ingress-nginx
+          reason: Managing
+          status: "True"
+          type: ingress-nginx.ingress-nginx/SveltosHelmReleaseReady
+    ```
+
+3. If you completed [Demo 4](#demo-4-install-servicetemplate-into-multiple-cluster) and deployed `MultiClusterService` kyverno , you may also find the service was deployed to the new cluster, even the `ClusterDeployment` object is located in different namespace than clusters we deployed in Demo 4. This is because `MultiClusterService` is the cluster-scope object and new cluster in the `blue` namespace has labels that meet the requirements in `MultiClusterService` object.
+
+    Get the state of `kyverno` service in `dev1` cluster:
+    ```shell
+    watch KUBECONFIG="kubeconfigs/blue-aws-dev1.kubeconfig" kubectl get pods -n kyverno
+    ```
+    
+    It should show the state similar to:
+    ```
+    NAME                                             READY   STATUS    RESTARTS   AGE
+    kyverno-admission-controller-96c5d48b4-rqpdz     1/1     Running   0          47s
+    kyverno-background-controller-65f9fd5859-qfwqc   1/1     Running   0          47s
+    kyverno-cleanup-controller-848b4c579d-fc8s4      1/1     Running   0          47s
+    kyverno-reports-controller-6f59fb8cd6-9j4f7      1/1     Running   0          47s
+    ```    
+
+    You can also find that the new `ClusterDeployment` from the `blue` namespace appears in the `MultiClusterService` object status:
+    ```shell
+    PATH=$PATH:./bin kubectl get multiclusterservice global-kyverno -o yaml
+    ```
+
+    In the output you can find information about clusters where the service is deployed:
+    ```
+    apiVersion: hmc.mirantis.com/v1alpha1
+    kind: MultiClusterService
+    ...
+    status:
+      ...
+      services:
+        ...
+        - clusterName: blue-aws-dev1
+          clusterNamespace: blue
+          conditions:
+          - lastTransitionTime: "2025-01-08T11:31:34Z"
+            message: ""
+            reason: Provisioned
+            status: "True"
+            type: Helm
+          - lastTransitionTime: "2025-01-08T11:31:34Z"
+            message: Release kyverno/kyverno
+            reason: Managing
+            status: "True"
+            type: kyverno.kyverno/SveltosHelmReleaseReady
+    ```
 
 ## Cleaning up
 

@@ -143,12 +143,14 @@ deploy-k0rdent: .check-binary-helm ## Deploy k0rdent to the management cluster
 watch-k0rdent-deployment: ## Monitor k0rdent deployment
 	@while true; do\
 		if $(KUBECTL) get management $(KCM_MANAGEMENT_OBJECT_NAME) > /dev/null 2>&1; then \
-				break; \
+				echo "Status of the k0rdent components installation: "; \
+				$(KUBECTL) get management $(KCM_MANAGEMENT_OBJECT_NAME) -o go-template='{{range $$key, $$value := .status.components}}{{$$key}}: {{if $$value.success}}{{$$value.success}}{{else}}{{$$value.error}}{{end}}{{"\n"}}{{end}}'; \
+				echo ; \
+		else \
+			echo "Waiting when k0rdent creates management object..."; \
 		fi; \
-		echo "Waiting when k0rdent creates management object..."; \
 		sleep 3; \
 	done;
-	@$(KUBECTL) get management $(KCM_MANAGEMENT_OBJECT_NAME) -o go-template='{{range $$key, $$value := .status.components}}{{$$key}}: {{if $$value.success}}{{$$value.success}}{{else}}{{$$value.error}}{{end}}{{"\n"}}{{end}}' -w
 
 # Setup Helm registry and push charts with custom Cluster and Service templates
 TEMPLATES_DIR := templates
@@ -259,18 +261,11 @@ get-kubeconfig-%: NAMESPACE = $(TESTING_NAMESPACE)
 get-kubeconfig-%:
 	@$(KUBECTL) -n $(NAMESPACE) get secret $(NAMESPACE)-aws-$(CLUSTERNAME)-kubeconfig -o jsonpath='{.data.value}' | base64 -d > $(KUBECONFIGS_DIR)/$(NAMESPACE)-aws-$(CLUSTERNAME).kubeconfig
 
-approve-%: COMMAND = .spec.accessRules[0].targetNamespaces.list |= ((. // []) + "$(TARGET_NAMESPACE)" | unique)$(patsubst %, | .spec.accessRules[0].credentials |= ((. // []) + "%" | unique),$(credential_name))$(patsubst %, | .spec.accessRules[0].clusterTemplateChains |= ((. // []) + "%" | unique),$(cluster_template_chain_name))
-approve-%:
+approve-%: COMMAND = .spec.accessRules[0].targetNamespaces.list |= ((. // []) + "$(TARGET_NAMESPACE)" | unique)$(patsubst %, | .spec.accessRules[0].credentials |= ((. // []) + "%" | unique),$(credential_name))$(patsubst %, | .spec.accessRules[0].clusterTemplateChains |= ((. // []) + "%" | unique),$(cluster_template_chain_name))$(patsubst %, | .spec.accessRules[0].serviceTemplateChains |= ((. // []) + "%" | unique),$(service_template_chain_name))
+approve-%: .check-binary-yq
 	@kubectl -n $(TESTING_NAMESPACE) get AccessManagement $(KCM_ACCESS_MANAGEMENT_OBJECT_NAME) -o yaml | \
 		$(YQ) '$(COMMAND)' | \
 		kubectl apply -f -
-
-temp: 
-temp: 
-		kubectl -n k0rdent get accessmanagement hmc -o yaml | \
-			$(YQ) '$(COMMAND)' \
-			> temp.yaml
-
 
 ##@ Demo 1
 
@@ -332,7 +327,7 @@ apply-clustertemplate-demo-azure-standalone-cp-0.0.2: SHOW_DIFF = false
 apply-clustertemplate-demo-azure-standalone-cp-0.0.2: template_path = templates/cluster/demo-azure-standalone-cp-0.0.2.yaml
 apply-clustertemplate-demo-azure-standalone-cp-0.0.2: ## Deploy custom demo-azure-standalone-cp-0.0.2 ClusterTemplate
 
-get-avaliable-upgrades: ## Get available upgrades for all managed clusters
+get-avaliable-upgrades: ## Get available upgrades for all cluster deployments
 	@$(KUBECTL) -n $(TESTING_NAMESPACE) get clusterdeployment.hmc.mirantis.com -o go-template='{{ range $$_,$$cluster := .items }}Cluster {{ $$cluster.metadata.name}} available upgrades: {{"\n"}}{{ range $$_,$$upgrade := $$cluster.status.availableUpgrades}}{{"  - "}}{{ $$upgrade }}{{"\n"}}{{ end }}{{"\n"}}{{ end }}'
 
 apply-cluster-deployment-aws-test1-0.0.2: CLUSTERNAME = test1
@@ -361,7 +356,7 @@ apply-servicetemplate-demo-kyverno-3.2.6: template_path = templates/service/demo
 apply-servicetemplate-demo-kyverno-3.2.6: ## Deploy custom demo-kyverno-3.2.6
 
 apply-multiclusterservice-global-kyverno: template_path = MultiClusterServices/1-global-kyverno.yaml
-apply-multiclusterservice-global-kyverno: ## Deploy MultiClusterService global-kyverno that installs kyverno service to all managed clusters
+apply-multiclusterservice-global-kyverno: ## Deploy MultiClusterService global-kyverno that installs kyverno service to all cluster deployments
 
 ##@ Demo 5
 
@@ -407,7 +402,18 @@ get-kubeconfig-aws-dev1: NAMESPACE = $(TARGET_NAMESPACE)
 get-kubeconfig-aws-dev1: KUBECONFIG = certs/platform-engineer1/kubeconfig.yaml
 get-kubeconfig-aws-dev1: ## Get kubeconfig for the cluster dev1 in the blue namespace
 
+##@ Demo 9
 
+approve-servicetemplatechain-ingress-nginx-4.11.0: service_template_chain_name = demo-ingress-nginx-4.11.0
+approve-servicetemplatechain-ingress-nginx-4.11.0: ## Approve ServiceTemplate into the target namespace
+
+##@ Demo 10
+
+apply-cluster-deployment-aws-dev1-0.0.1-ingress: CLUSTERNAME = dev1
+apply-cluster-deployment-aws-dev1-0.0.1-ingress: template_path = clusterDeployments/aws/0.0.1-ingress.yaml
+apply-cluster-deployment-aws-dev1-0.0.1-ingress: NAMESPACE = $(TARGET_NAMESPACE)
+apply-cluster-deployment-aws-dev1-0.0.1-ingress: KUBECONFIG = certs/platform-engineer1/kubeconfig.yaml
+apply-cluster-deployment-aws-dev1-0.0.1-ingress: ## Deploy ingress service to the AWS cluster deployment dev1 in the blue namespace
 
 ##@ TBD
 
@@ -631,8 +637,8 @@ certs/platform-engineer1/platform-engineer1.crt: certs/platform-engineer1/platfo
 .PHONY: cleanup-clusters
 cleanup-clusters: clean-certs ## Tear down managed cluster
 	@if $(KIND) get clusters | grep -q $(KIND_CLUSTER_NAME); then \
-		$(KUBECTL) --context=$(KIND_KUBECTL_CONTEXT) delete clusterdeployment.hmc.mirantis.com --all --wait=false 2>/dev/null || true; \
-		while [[ $$($(KUBECTL) --context=$(KIND_KUBECTL_CONTEXT) get clusterdeployment.hmc.mirantis.com --all -o go-template='{{ len .items }}' 2>/dev/null || echo 0) > 0 ]]; do \
+		$(KUBECTL) --context=$(KIND_KUBECTL_CONTEXT) delete clusterdeployment.hmc.mirantis.com --all -A --wait=false 2>/dev/null || true; \
+		while [[ $$($(KUBECTL) --context=$(KIND_KUBECTL_CONTEXT) get clusterdeployment.hmc.mirantis.com -A -o go-template='{{ len .items }}' 2>/dev/null || echo 0) > 0 ]]; do \
 			echo "Waiting untill all cluster deployments are deleted..."; \
 			sleep 3; \
 		done; \
