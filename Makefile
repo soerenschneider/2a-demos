@@ -405,6 +405,7 @@ apply-cluster-deployment-aws-dev1-0.0.1: KUBECONFIG = certs/platform-engineer1/k
 apply-cluster-deployment-aws-dev1-0.0.1: ## Deploy cluster deployment AWS dev1 version 0.0.1 to the blue namespace as Platform Engineer
 
 watch-aws-dev1: CLUSTERNAME = dev1
+watch-aws-dev1: PROVIDER = aws
 watch-aws-dev1: NAMESPACE = $(TARGET_NAMESPACE)
 watch-aws-dev1: KUBECONFIG = certs/platform-engineer1/kubeconfig.yaml
 watch-aws-dev1: ## Monitor the provisioning process of the AWS cluster deployment dev1 in blue namespace
