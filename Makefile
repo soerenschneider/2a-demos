@@ -345,9 +345,21 @@ apply-servicetemplate-demo-ingress-nginx-4.11.0: SHOW_DIFF = false
 apply-servicetemplate-demo-ingress-nginx-4.11.0: template_path = templates/service/demo-ingress-nginx-4.11.0.yaml
 apply-servicetemplate-demo-ingress-nginx-4.11.0: ## Deploy custom demo-ingress-nginx-4.11.0 ServiceTemplate
 
+apply-cluster-deployment-aws-test1-0.0.1-ingress: CLUSTERNAME = test1
+apply-cluster-deployment-aws-test1-0.0.1-ingress: template_path = clusterDeployments/aws/0.0.1-ingress.yaml
+apply-cluster-deployment-aws-test1-0.0.1-ingress: ## Deploy ingress service to the cluster deployment test1 in AWS
+
 apply-cluster-deployment-aws-test2-0.0.1-ingress: CLUSTERNAME = test2
 apply-cluster-deployment-aws-test2-0.0.1-ingress: template_path = clusterDeployments/aws/0.0.1-ingress.yaml
 apply-cluster-deployment-aws-test2-0.0.1-ingress: ## Deploy ingress service to the cluster deployment test2 in AWS
+
+apply-cluster-deployment-aws-test1-0.0.2-ingress: CLUSTERNAME = test1
+apply-cluster-deployment-aws-test1-0.0.2-ingress: template_path = clusterDeployments/aws/0.0.2-ingress.yaml
+apply-cluster-deployment-aws-test1-0.0.2-ingress: ## Deploy ingress service to the cluster deployment test1 in AWS
+
+apply-cluster-deployment-aws-test2-0.0.2-ingress: CLUSTERNAME = test2
+apply-cluster-deployment-aws-test2-0.0.2-ingress: template_path = clusterDeployments/aws/0.0.2-ingress.yaml
+apply-cluster-deployment-aws-test2-0.0.2-ingress: ## Deploy ingress service to the cluster deployment test2 in AWS
 
 ##@ Demo 4
 
