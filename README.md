@@ -284,7 +284,7 @@ In the real world this would most probably be done by a Platform Team Lead that 
 
 This demo shows how to upgrade an existing cluster through the cluster template system. This expects [Demo 1](#demo-1-standalone-cluster-deployment) to be completed or the `aws-test1` cluster already created during the [Demo Setup](#demo-cluster-setup).
 
-This demo will upgrade the k8s cluster from `v1.31.1+k0s.1` (which is part of the `demo-aws-standalone-cp-0.0.1` template) to `v1.31.2+k0s.0` (which is part of `demo-aws-standalone-cp-0.0.2`)
+This demo will upgrade the k8s cluster from `v1.31.2+k0s.1` (which is part of the `demo-aws-standalone-cp-0.0.1` template) to `v1.31.3+k0s.0` (which is part of `demo-aws-standalone-cp-0.0.2`)
 
 1. Install ClusterTemplate Upgrade
     ```shell
