@@ -21,8 +21,8 @@ All demos in here provide their own complete ClusterTemplates and ServiceTemplat
 1. [Demo 4: Install ServiceTemplate into multiple Cluster](#demo-4-install-servicetemplate-into-multiple-cluster)
 1. [Demo 5: Approve ClusterTemplate & InfraCredentials for separate Namespace](#demo-5-approve-clustertemplate--infracredentials-for-separate-namespace)
 1. [Demo 6: Use approved ClusterTemplate in separate Namespace](#demo-6-use-approved-clustertemplate-in-separate-namespace)
-1. [Demo 7: Test new clusterTemplate as k0rdent Admin, then approve them in separate Namespace](#demo-7-test-new-clustertemplate-as-k0rdent-admin-then-approve-them-in-separate-namespace)
-1. [Demo 8: Use newly approved Namespace in separate Namespace](#demo-8-use-newly-approved-namespace-in-separate-namespace)
+1. [Demo 7: Test new ClusterTemplate as k0rdent Admin, then approve them in separate Namespace](#demo-7-test-new-clustertemplate-as-k0rdent-admin-then-approve-them-in-separate-namespace)
+1. [Demo 8: Use newly approved ClusterTemplate in separate Namespace](#demo-8-use-newly-clustertemplate-namespace-in-separate-namespace)
 1. [Demo 9: Approve ServiceTemplate in separate Namespace](#demo-9-approve-servicetemplate-in-separate-namespace)
 1. [Demo 10: Use ServiceTemplate in separate Namespace](#demo-10-use-servicetemplate-in-separate-namespace)
 1. [Cleaning up](#cleaning-up)
@@ -620,9 +620,9 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
     blue-aws-dev1-md-kxgdb-jkcpc   Ready    <none>          2m5s   v1.31.2+k0s
     ```
 
-## Demo 7: Test new clusterTemplate as k0rdent Admin, then approve them in separate Namespace
+## Demo 7: Test new ClusterTemplate as k0rdent Admin, then approve them in separate Namespace
 
-## Demo 8: Use newly approved Namespace in separate Namespace
+## Demo 8: Use newly approved ClusterTemplate in separate Namespace
 
 ## Demo 9: Approve ServiceTemplate in separate Namespace
 
