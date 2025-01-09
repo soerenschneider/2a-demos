@@ -307,7 +307,7 @@ apply-cluster-deployment-azure-test2-0.0.1: template_path = clusterDeployments/a
 apply-cluster-deployment-azure-test2-0.0.1: ## Deploy cluster deployment test2 version 0.0.1 to Azure
 
 watch-aws-test2: CLUSTERNAME = test2
-watch-aws-test1: PROVIDER = aws
+watch-aws-test2: PROVIDER = aws
 watch-aws-test2: ## Monitor the provisioning process of the cluster deployment test2 in AWS
 
 watch-azure-test2: CLUSTERNAME = test2
