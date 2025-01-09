@@ -19,6 +19,13 @@ All demos in here provide their own complete ClusterTemplates and ServiceTemplat
 1. [Demo 2: Single Standalone Cluster Upgrade](#demo-2-single-standalone-cluster-upgrade)
 1. [Demo 3: Install ServiceTemplate into single cluster](#demo-3-install-servicetemplate-into-single-cluster)
 1. [Demo 4: Install ServiceTemplate into multiple Cluster](#demo-4-install-servicetemplate-into-multiple-cluster)
+1. [Demo 5: Approve ClusterTemplate & InfraCredentials for separate Namespace](#demo-5-approve-clustertemplate--infracredentials-for-separate-namespace)
+1. [Demo 6: Use approved ClusterTemplate in separate Namespace](#demo-6-use-approved-clustertemplate-in-separate-namespace)
+1. [Demo 7: Test new clusterTemplate as k0rdent Admin, then approve them in separate Namespace](#demo-7-test-new-clustertemplate-as-k0rdent-admin-then-approve-them-in-separate-namespace)
+1. [Demo 8: Use newly approved Namespace in separate Namespace](#demo-8-use-newly-approved-namespace-in-separate-namespace)
+1. [Demo 9: Approve ServiceTemplate in separate Namespace](#demo-9-approve-servicetemplate-in-separate-namespace)
+1. [Demo 10: Use ServiceTemplate in separate Namespace](#demo-10-use-servicetemplate-in-separate-namespace)
+1. [Cleaning up](#cleaning-up)
 
 ## Setup
 
