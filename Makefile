@@ -140,6 +140,7 @@ deploy-k0rdent: .check-binary-helm ## Deploy k0rdent to the management cluster
 	$(HELM) install kcm $(KCM_REPO) --version $(KCM_VERSION) -n $(KCM_NAMESPACE) --create-namespace
 
 .PHONY: watch-k0rdent-deployment
+watch-k0rdent-deployment: .check-binary-kubectl
 watch-k0rdent-deployment: ## Monitor k0rdent deployment
 	@while true; do\
 		if $(KUBECTL) get management $(KCM_MANAGEMENT_OBJECT_NAME) > /dev/null 2>&1; then \
@@ -185,11 +186,12 @@ helm-push: helm-package
 		$(HELM) push "$$chart" $(REGISTRY_REPO); \
 	done
 
-.PHONY: setup-helmrepo
-setup-helmrepo: ## Deploy local helm repository and register it in k0rdent
-	@envsubst < setup/helmRepository.yaml | $(KUBECTL) apply -f -
+apply-helmrepo: SHOW_DIFF = false
+apply-helmrepo: template_path = setup/helmRepository.yaml
+apply-helmrepo: ## Deploy local helm repository and register it in k0rdent
 
 .PHONY: push-helm-charts
+push-helm-charts: .check-binary-kubectl
 push-helm-charts: ## Push helm charts with custom Cluster and Service templates
 	@while true; do\
 		if $(KUBECTL) -n $(TESTING_NAMESPACE) get deploy helm-registry; then \
@@ -204,7 +206,7 @@ push-helm-charts: ## Push helm charts with custom Cluster and Service templates
 
 ##@ Infra Setup
 
-get-creds-%:
+get-creds-%: .check-binary-kubectl
 	@$(KUBECTL) -n $(TESTING_NAMESPACE) get credentials $(creds_name)
 
 # AWS
@@ -213,10 +215,10 @@ get-creds-%:
 .%-aws-secret-access-key: var_name = AWS_SECRET_ACCESS_KEY
 .%-aws-secret-access-key: var_description = AWS secret access key
 
-.PHONY: setup-aws-creds
-setup-aws-creds: .check-variable-aws-access-key .check-variable-aws-secret-access-key ## Setup AWS credentials
-setup-aws-creds: ## Setup AWS credentials
-	envsubst < setup/aws-credentials.yaml | kubectl apply -f -
+apply-aws-creds: SHOW_DIFF = false
+apply-aws-creds: template_path = setup/aws-credentials.yaml
+apply-aws-creds: .check-variable-aws-access-key .check-variable-aws-secret-access-key
+apply-aws-creds: ## Setup AWS credentials
 
 get-creds-aws: creds_name = aws-cluster-identity-cred
 get-creds-aws: ## Get AWS credentials info
@@ -231,10 +233,10 @@ get-creds-aws: ## Get AWS credentials info
 .%-azure-sp-subscription-id: var_name = AZURE_SUBSCRIPTION_ID
 .%-azure-sp-subscription-id: var_description = Azure Subscription ID
 
-.PHONY: setup-azure-creds
-setup-azure-creds: .check-variable-azure-sp-password .check-variable-azure-sp-app-id .check-variable-azure-sp-tenant-id ## Setup Azure credentials
-setup-azure-creds: ## Setup Azure credentials
-	envsubst < setup/azure-credentials.yaml | kubectl apply -f -
+apply-azure-creds: SHOW_DIFF = false
+apply-azure-creds: template_path = setup/azure-credentials.yaml
+apply-azure-creds: .check-variable-azure-sp-password .check-variable-azure-sp-app-id .check-variable-azure-sp-tenant-id
+apply-azure-creds: ## Setup Azure credentials
 
 get-creds-azure: creds_name = azure-cluster-identity-cred
 get-creds-azure: ## Get Azure credentials info
@@ -242,7 +244,7 @@ get-creds-azure: ## Get Azure credentials info
 ## Common targets and functions
 apply-%: NAMESPACE = $(TESTING_NAMESPACE)
 apply-%: SHOW_DIFF = true
-apply-%:
+apply-%: .check-binary-kubectl
 	@if [[ "$$SHOW_DIFF" == "true" ]]; then \
 		echo "Applying changes: "; \
 		envsubst < $(template_path) | KUBECTL_EXTERNAL_DIFF="diff --color -N -u" $(KUBECTL) diff  -f - || true; \
@@ -250,7 +252,7 @@ apply-%:
 	@envsubst < $(template_path) | $(KUBECTL) apply -f -
 
 watch-%: NAMESPACE = $(TESTING_NAMESPACE)
-watch-%:
+watch-%: .check-binary-kubectl
 	@$(KUBECTL) get -n $(NAMESPACE) clusterdeployment $(NAMESPACE)-$(PROVIDER)-$(CLUSTERNAME) --watch
 
 KUBECONFIGS_DIR = $(shell pwd)/kubeconfigs
@@ -258,14 +260,14 @@ $(KUBECONFIGS_DIR):
 	@mkdir -p $(KUBECONFIGS_DIR)
 
 get-kubeconfig-%: NAMESPACE = $(TESTING_NAMESPACE)
-get-kubeconfig-%:
+get-kubeconfig-%: .check-binary-kubectl
 	@$(KUBECTL) -n $(NAMESPACE) get secret $(NAMESPACE)-aws-$(CLUSTERNAME)-kubeconfig -o jsonpath='{.data.value}' | base64 -d > $(KUBECONFIGS_DIR)/$(NAMESPACE)-aws-$(CLUSTERNAME).kubeconfig
 
 approve-%: COMMAND = .spec.accessRules[0].targetNamespaces.list |= ((. // []) + "$(TARGET_NAMESPACE)" | unique)$(patsubst %, | .spec.accessRules[0].credentials |= ((. // []) + "%" | unique),$(credential_name))$(patsubst %, | .spec.accessRules[0].clusterTemplateChains |= ((. // []) + "%" | unique),$(cluster_template_chain_name))$(patsubst %, | .spec.accessRules[0].serviceTemplateChains |= ((. // []) + "%" | unique),$(service_template_chain_name))
 approve-%: .check-binary-yq
-	@kubectl -n $(TESTING_NAMESPACE) get AccessManagement $(KCM_ACCESS_MANAGEMENT_OBJECT_NAME) -o yaml | \
+	@$(KUBECTL) -n $(TESTING_NAMESPACE) get AccessManagement $(KCM_ACCESS_MANAGEMENT_OBJECT_NAME) -o yaml | \
 		$(YQ) '$(COMMAND)' | \
-		kubectl apply -f -
+		$(KUBECTL) apply -f -
 
 ##@ Demo 1
 
@@ -327,6 +329,7 @@ apply-clustertemplate-demo-azure-standalone-cp-0.0.2: SHOW_DIFF = false
 apply-clustertemplate-demo-azure-standalone-cp-0.0.2: template_path = templates/cluster/demo-azure-standalone-cp-0.0.2.yaml
 apply-clustertemplate-demo-azure-standalone-cp-0.0.2: ## Deploy custom demo-azure-standalone-cp-0.0.2 ClusterTemplate
 
+get-avaliable-upgrades: .check-binary-kubectl
 get-avaliable-upgrades: ## Get available upgrades for all cluster deployments
 	@$(KUBECTL) -n $(TESTING_NAMESPACE) get clusterdeployment.hmc.mirantis.com -o go-template='{{ range $$_,$$cluster := .items }}Cluster {{ $$cluster.metadata.name}} available upgrades: {{"\n"}}{{ range $$_,$$upgrade := $$cluster.status.availableUpgrades}}{{"  - "}}{{ $$upgrade }}{{"\n"}}{{ end }}{{"\n"}}{{ end }}'
 
@@ -373,9 +376,9 @@ apply-multiclusterservice-global-kyverno: ## Deploy MultiClusterService global-k
 ##@ Demo 5
 
 .PHONY: create-target-namespace-rolebindings
-create-target-namespace-rolebindings:
-	@kubectl get namespace $(TARGET_NAMESPACE) > /dev/null 2>&1 || kubectl create namespace $(TARGET_NAMESPACE)
-	@envsubst < rolebindings.yaml | kubectl apply -f -
+create-target-namespace-rolebindings: .check-binary-kubectl
+	@$(KUBECTL) get namespace $(TARGET_NAMESPACE) > /dev/null 2>&1 || $(KUBECTL) create namespace $(TARGET_NAMESPACE)
+	@envsubst < rolebindings.yaml | $(KUBECTL) apply -f -
 
 .PHONY: generate-platform-engineer1-kubeconfig
 generate-platform-engineer1-kubeconfig: USER_NAME = platform-engineer1
@@ -433,7 +436,7 @@ apply-cluster-deployment-aws-dev1-0.0.1-ingress: ## Deploy ingress service to th
 # install-template will install a given template
 # $1 - yaml file
 define install-template
-	kubectl apply -f $(1)
+	$(KUBECTL) apply -f $(1)
 endef
 
 .PHONY: install-servicetemplate-demo-ingress-nginx-4.11.3
@@ -446,9 +449,9 @@ install-servicetemplate-demo-ingress-nginx-4.11.3:
 # $3 - yaml file
 define apply-managed-cluster-yaml
 	@echo "applying: "
-	@NAMESPACE=$(1) CLUSTERNAME=$(2) envsubst < $(3)  | KUBECTL_EXTERNAL_DIFF="diff --color -N -u" kubectl diff  -f - || true
+	@NAMESPACE=$(1) CLUSTERNAME=$(2) envsubst < $(3)  | KUBECTL_EXTERNAL_DIFF="diff --color -N -u" $(KUBECTL) diff  -f - || true
 	@echo
-	NAMESPACE=$(1) CLUSTERNAME=$(2) envsubst < $(3) | kubectl apply -f -
+	NAMESPACE=$(1) CLUSTERNAME=$(2) envsubst < $(3) | $(KUBECTL) apply -f -
 endef
 
 # apply-managed-cluster-yaml-platform-engineer1 will apply a given cluster yaml as platform-engineer1
@@ -457,9 +460,9 @@ endef
 # $3 - yaml file
 define apply-managed-cluster-yaml-platform-engineer1
 	@echo "applying: "
-	@NAMESPACE=$(1) CLUSTERNAME=$(2) envsubst < $(3)  | KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" KUBECTL_EXTERNAL_DIFF="diff --color -N -u" kubectl diff  -f - || true
+	@NAMESPACE=$(1) CLUSTERNAME=$(2) envsubst < $(3)  | KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" KUBECTL_EXTERNAL_DIFF="diff --color -N -u" $(KUBECTL) diff  -f - || true
 	@echo
-	NAMESPACE=$(1) CLUSTERNAME=$(2) envsubst < $(3) | KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" kubectl apply -f -
+	NAMESPACE=$(1) CLUSTERNAME=$(2) envsubst < $(3) | KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" $(KUBECTL) apply -f -
 endef
 
 
@@ -560,7 +563,7 @@ apply-azure-dev1-ingress-0.0.2:
 # $1 - target namespace
 # $2 - templatename
 define approve-clustertemplatechain
-	kubectl -n $(TESTING_NAMESPACE) patch AccessManagement hmc --type='json' -p='[ \
+	$(KUBECTL) -n $(TESTING_NAMESPACE) patch AccessManagement hmc --type='json' -p='[ \
 		{ "op": "add", "path": "/spec/accessRules", "value": [] }, \
 		{ \
 			"op": "add", \
@@ -579,7 +582,7 @@ endef
 # $1 - target namespace
 # $2 - templatename
 define approve-servicetemplatechain
-	kubectl -n $(TESTING_NAMESPACE) patch AccessManagement hmc --type='json' -p='[ \
+	$(KUBECTL) -n $(TESTING_NAMESPACE) patch AccessManagement hmc --type='json' -p='[ \
 		{ "op": "add", "path": "/spec/accessRules", "value": [] }, \
 		{ \
 			"op": "add", \
@@ -606,7 +609,7 @@ approve-templatechain-demo-ingress-nginx-4.11.3:
 # $1 - target namespace
 # $2 - credentialname
 define approve-credential
-	kubectl -n $(TESTING_NAMESPACE) patch AccessManagement hmc --type='json' -p='[ \
+	$(KUBECTL) -n $(TESTING_NAMESPACE) patch AccessManagement hmc --type='json' -p='[ \
 		{ "op": "add", "path": "/spec/accessRules", "value": [] }, \
 		{ \
 			"op": "add", \
@@ -648,7 +651,8 @@ certs/platform-engineer1/platform-engineer1.crt: certs/platform-engineer1/platfo
 ##@ Cleanup
 
 .PHONY: cleanup-clusters
-cleanup-clusters: clean-certs ## Tear down managed cluster
+cleanup-clusters: .check-binary-kubectl clean-certs
+cleanup-clusters: ## Tear down managed cluster
 	@if $(KIND) get clusters | grep -q $(KIND_CLUSTER_NAME); then \
 		$(KUBECTL) --context=$(KIND_KUBECTL_CONTEXT) delete clusterdeployment.hmc.mirantis.com --all -A --wait=false 2>/dev/null || true; \
 		while [[ $$($(KUBECTL) --context=$(KIND_KUBECTL_CONTEXT) get clusterdeployment.hmc.mirantis.com -A -o go-template='{{ len .items }}' 2>/dev/null || echo 0) > 0 ]]; do \

@@ -70,7 +70,7 @@ To get the full list of commands run `make help`.
 
 4. Install the Demo Helm Repo into k0rdent:
     ```shell
-    make setup-helmrepo
+    make apply-helmrepo
     ```
     This step deploys simple local OCI Helm registry and adds a [`HelmRepository` resource](https://fluxcd.io/flux/components/source/helmrepositories/) to the cluster that contains Helm charts for this demo.
 
@@ -107,7 +107,7 @@ This assumes that you already have configured the required [AWS IAM Roles](https
 
 3. Install Credentials into k0rdent:
     ```shell
-    make setup-aws-creds
+    make apply-aws-creds
     ```
 
 4. Check that credentials are ready to use
@@ -136,7 +136,7 @@ This assumes that you already have configured the required [Azure providers](htt
 
 2. Install Credentials into k0rdent:
     ```
-    make setup-azure-creds
+    make apply-azure-creds
     ```
 
 3. Check that credentials are ready to use
