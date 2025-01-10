@@ -19,7 +19,7 @@ All demos in here provide their own complete ClusterTemplates and ServiceTemplat
 1. [Demo 1: Standalone Cluster Deployment](#demo-1-standalone-cluster-deployment)
 1. [Demo 2: Single Standalone Cluster Upgrade](#demo-2-single-standalone-cluster-upgrade)
 1. [Demo 3: Install ServiceTemplate into single cluster](#demo-3-install-servicetemplate-into-single-cluster)
-1. [Demo 4: Install ServiceTemplate into multiple Cluster](#demo-4-install-servicetemplate-into-multiple-cluster)
+1. [Demo 4: Install ServiceTemplate into multiple clusters](#demo-4-install-servicetemplate-into-multiple-clusters)
 1. [Demo 5: Approve ClusterTemplate & InfraCredentials for separate Namespace](#demo-5-approve-clustertemplate--infracredentials-for-separate-namespace)
 1. [Demo 6: Use approved ClusterTemplate in separate Namespace](#demo-6-use-approved-clustertemplate-in-separate-namespace)
 1. [Demo 7: Test new ClusterTemplate as k0rdent Admin, then approve them in separate Namespace](#demo-7-test-new-clustertemplate-as-k0rdent-admin-then-approve-them-in-separate-namespace)
@@ -98,7 +98,7 @@ To get the full list of commands run `make help`.
 
 4. Install the Demo Helm Repo into k0rdent:
     ```shell
-    make setup-helmrepo
+    make apply-helmrepo
     ```
     This step deploys simple local OCI Helm registry and adds a [`HelmRepository` resource](https://fluxcd.io/flux/components/source/helmrepositories/) to the cluster that contains Helm charts for this demo.
 
@@ -109,10 +109,13 @@ To get the full list of commands run `make help`.
     make push-helm-charts
     ```
 
+6. **Important!** If you are going to run demos in corporate or shared cloud accounts, and it is possible that someone else is running the same demos, you may end up in a situation where cloud resources with the same name already exist and you will get errors when deploying clusters. To avoid this, you can set an environment variable with your username. It can be any value though but it's required to be unique:
+    ```
+    export USERNAME=<your_username>
+    ```
+
 
 ### Infra Setup
-
-> Expected completion time ~2 min
 
 As next you need to decide into which infrastructure you would like to install the Demo clusters. This Demo Repo has support for the following Infra Providers (more to follow in the future):
 
@@ -120,6 +123,8 @@ As next you need to decide into which infrastructure you would like to install t
 - Azure
 
 #### AWS Setup
+
+> Expected completion time ~2 min
 
 This assumes that you already have configured the required [AWS IAM Roles](https://k0rdent.github.io/docs/quick-start/aws/#configure-aws-iam) and have an [AWS account with the required permissions](https://k0rdent.github.io/docs/quick-start/aws/#step-1-create-aws-iam-user). If not follow the k0rdent documentation steps for them.
 
@@ -135,7 +140,7 @@ This assumes that you already have configured the required [AWS IAM Roles](https
 
 3. Install Credentials into k0rdent:
     ```shell
-    make setup-aws-creds
+    make apply-aws-creds
     ```
 
 4. Check that credentials are ready to use
@@ -152,6 +157,8 @@ This assumes that you already have configured the required [AWS IAM Roles](https
 
 **Currently demos don't have Azure cluster deployments, so you can skip this section**
 
+> Expected completion time ~2 min
+
 This assumes that you already have configured the required [Azure providers](https://k0rdent.github.io/docs/quick-start/azure/#register-resource-providers) and created a [Azure Service Principal](https://k0rdent.github.io/docs/quick-start/azure/#step-2-create-a-service-principal-sp).
 
 1. Export Azure Service Principal keys as environment variables:
@@ -164,7 +171,7 @@ This assumes that you already have configured the required [Azure providers](htt
 
 2. Install Credentials into k0rdent:
     ```
-    make setup-azure-creds
+    make apply-azure-creds
     ```
 
 3. Check that credentials are ready to use
@@ -198,6 +205,8 @@ If your plan is to demo an upgrade (Demo 2) or anything related to ServiceTempla
 
 ### Blue Namespace & Platform Engineer Credentials
 
+> Expected completion time ~2 min
+
 If you plan to run the [`Demo 5`](#demo-5-approve-clustertemplate--infracredentials-for-separate-namespace) or above we need a secondary namespace (we call it `blue` in this demo) and credentials for a Platform Engineer that does only have access to the blue namespace and not cluster admin.
 
 1. Create target namespace blue and required rolebindings
@@ -207,7 +216,6 @@ If you plan to run the [`Demo 5`](#demo-5-approve-clustertemplate--infracredenti
 
 2. Generate Kubeconfig for platform engineer
     ```shell
-    make clean-certs
     make generate-platform-engineer1-kubeconfig
     ```
 
@@ -293,24 +301,24 @@ In the real world this would most probably be done by a Platform Team Lead that 
     KUBECONFIG="kubeconfigs/k0rdent-aws-test1.kubeconfig" PATH=$PATH:./bin kubectl get node
     ```
 
-    Example output:
+    Example output (username suffix will be present only if you specified the `USERNAME` variable at the [`General Setup`](#general-setup) step):
     ```
     NAME                               STATUS   ROLES           AGE   VERSION
-    k0rdent-aws-test1-cp-0             Ready    control-plane   19m   v1.31.2+k0s
-    k0rdent-aws-test1-md-j87z9-fljb4   Ready    <none>          17m   v1.31.2+k0s
-    k0rdent-aws-test1-md-j87z9-r85gs   Ready    <none>          17m   v1.31.2+k0s
+    k0rdent-aws-test1-<username>-cp-0             Ready    control-plane   19m   v1.31.2+k0s
+    k0rdent-aws-test1-<username>-md-j87z9-fljb4   Ready    <none>          17m   v1.31.2+k0s
+    k0rdent-aws-test1-<username>-md-j87z9-r85gs   Ready    <none>          17m   v1.31.2+k0s
     ```
 
     ```shell
     KUBECONFIG="kubeconfigs/k0rdent-aws-test2.kubeconfig" PATH=$PATH:./bin kubectl get node
     ```
 
-    Example output:
+    Example output (username suffix will be present only if you specified the `USERNAME` variable at the [`General Setup`](#general-setup) step):
     ```
     NAME                               STATUS   ROLES           AGE   VERSION
-    k0rdent-aws-test2-cp-0             Ready    control-plane   19m   v1.31.2+k0s
-    k0rdent-aws-test2-md-j87z9-fljb4   Ready    <none>          17m   v1.31.2+k0s
-    k0rdent-aws-test2-md-j87z9-r85gs   Ready    <none>          17m   v1.31.2+k0s
+    k0rdent-aws-test2-<username>-cp-0             Ready    control-plane   19m   v1.31.2+k0s
+    k0rdent-aws-test2-<username>-md-j87z9-fljb4   Ready    <none>          17m   v1.31.2+k0s
+    k0rdent-aws-test2-<username>-md-j87z9-r85gs   Ready    <none>          17m   v1.31.2+k0s
     ```
 
 ## Demo 2: Single Standalone Cluster Upgrade
@@ -319,7 +327,7 @@ In the real world this would most probably be done by a Platform Team Lead that 
 
 This demo shows how to upgrade an existing cluster through the cluster template system. This expects [Demo 1](#demo-1-standalone-cluster-deployment) to be completed or the `aws-test1` cluster already created during the [Demo Setup](#demo-cluster-setup).
 
-This demo will upgrade the k8s cluster from `v1.31.2+k0s.1` (which is part of the `demo-aws-standalone-cp-0.0.1` template) to `v1.31.3+k0s.0` (which is part of `demo-aws-standalone-cp-0.0.2`)
+This demo will upgrade the k8s cluster from `v1.31.2+k0s.0` (which is part of the `demo-aws-standalone-cp-0.0.1` template) to `v1.31.3+k0s.0` (which is part of `demo-aws-standalone-cp-0.0.2`)
 
 1. Install ClusterTemplate Upgrade
     ```shell
@@ -344,15 +352,15 @@ This demo will upgrade the k8s cluster from `v1.31.2+k0s.1` (which is part of th
 2. The fact that we have an upgrade available will be reported by k0rdent. You can find all available upgrades for all cluster deployments by executing this command:
 
     ```shell
-    make get-avaliable-upgrades
+    make get-avaliable-upgrades-k0rdent
     ```
 
-    Example output:
+    Example output (username suffix will be present only if you specified the `USERNAME` variable at the [`General Setup`](#general-setup) step):
     ```
-    Cluster k0rdent-aws-test1 available upgrades: 
+    Cluster k0rdent-aws-test1-<username> available upgrades: 
       - demo-aws-standalone-cp-0.0.2
 
-    Cluster k0rdent-aws-test2 available upgrades: 
+    Cluster k0rdent-aws-test2-<username> available upgrades: 
       - demo-aws-standalone-cp-0.0.2
     ```
 
@@ -368,11 +376,11 @@ This demo will upgrade the k8s cluster from `v1.31.2+k0s.1` (which is part of th
     PATH=$PATH:./bin kubectl -n k0rdent get machines -w
     ```
 
-    You can see how for cluster `test1` the k0s control plane node version is upgraded to the new one, then one by one new worker nodes should be provisioned and put into `Running` state, and old nodes should be removed.
+    You will see how for cluster `test1` the k0s control plane node version is upgraded to the new one, then one by one new worker nodes should be provisioned and put into `Running` state, and old nodes should be removed.
 
     > Hint: control plane nodes for k0s clusters are being upgraded in place (check the version field) without provisioning new machines.
 
-    And how in the created cluster old nodes are drained and new nodes are attached:
+    Or how in the created cluster old nodes are drained and new nodes are attached:
     ```shell
     KUBECONFIG="kubeconfigs/k0rdent-aws-test1.kubeconfig" PATH=$PATH:./bin kubectl get node -w
     ```
@@ -423,20 +431,20 @@ In order to run this demo you need [`Demo 1`](#demo-1-standalone-cluster-deploym
     ingress-nginx-controller-86bd747cf9-ds56s   1/1     Running   0          34s
     ```
 
-    You can also check the services status of the `ClusterDeployment` of object in management cluster:
+    You can also check the services status of the `ClusterDeployment` of object in our management cluster:
 
     ```shell
-    PATH=$PATH:./bin kubectl -n k0rdent get clusterdeployment.hmc.mirantis.com k0rdent-aws-test2 -o yaml
+    make get-yaml-clusterdeployment-aws-test2
     ```
 
-    The output under the `status.services` should contain information about successfully deployed ingress nginx service:
+    The output under the `status.services` should contain information about successfully deployed ingress nginx service (username suffix will be present only if you specified the `USERNAME` variable at the [`General Setup`](#general-setup) step):
 
     ```
     ...
     status:
       ...
       services:
-      - clusterName: k0rdent-aws-test2
+      - clusterName: k0rdent-aws-test2-<username>
         clusterNamespace: k0rdent
         conditions:
         ...
@@ -447,7 +455,9 @@ In order to run this demo you need [`Demo 1`](#demo-1-standalone-cluster-deploym
           type: ingress-nginx.ingress-nginx/SveltosHelmReleaseReady
     ```
 
-## Demo 4: Install ServiceTemplate into multiple Cluster
+## Demo 4: Install ServiceTemplate into multiple clusters
+
+> Expected completion time ~5 min
 
 This Demo shows the capability of k0rdent to install a ServiceTemplate into multiple Clusters without the need to reference it in every cluster as we did in `Demo 3`.
 
@@ -504,10 +514,10 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
 
 4. You can also check the deployment status for all clusters in the `MultiClusterService` object:
     ```shell
-    PATH=$PATH:./bin kubectl get multiclusterservice global-kyverno -o yaml
+    make get-yaml-milticlasterservice-global-kyverno
     ```
 
-    In the output you can find information about clusters where the service is deployed:
+    In the output you can find information about clusters where the service is deployed (username suffix will be present only if you specified the `USERNAME` variable at the [`General Setup`](#general-setup) step):
     ```
     apiVersion: hmc.mirantis.com/v1alpha1
     kind: MultiClusterService
@@ -515,7 +525,7 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
     status:
       ...
       services:
-        - clusterName: k0rdent-aws-test1
+        - clusterName: k0rdent-aws-test1-<username>
           clusterNamespace: k0rdent
           conditions:
           - lastTransitionTime: "2025-01-03T14:12:33Z"
@@ -528,7 +538,7 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
             reason: Managing
             status: "True"
             type: kyverno.kyverno/SveltosHelmReleaseReady
-        - clusterName: k0rdent-aws-test2
+        - clusterName: k0rdent-aws-test2-<username>
           clusterNamespace: k0rdent
           conditions:
           - lastTransitionTime: "2025-01-03T14:12:33Z"
@@ -545,14 +555,16 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
 
 ## Demo 5: Approve ClusterTemplate & InfraCredentials for separate Namespace
 
+> Expected completion time ~2 min
+
 1. Approve the clustertemplate into the blue namespace
     ```shell
     make approve-clustertemplatechain-aws-standalone-cp-0.0.1
     ```
 
-    Check the status of the `hmc` AccessManagement object:
+    Check the status of the AccessManagement object:
     ```shell
-    PATH=$PATH:./bin kubectl -n k0rdent get AccessManagement hmc -o yaml
+    make get-yaml-accessmanagement
     ```
 
     In the status section you can find information about the clustertemplate that was approved to the target `blue` namespace:
@@ -577,7 +589,7 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
 
     Check the status of the `hmc` AccessManagement object:
     ```shell
-    PATH=$PATH:./bin kubectl -n k0rdent get AccessManagement hmc -o yaml
+    make get-yaml-accessmanagement
     ```
 
     In the status section you can find information about the clustertemplate that was approved to the target `blue` namespace:
@@ -611,6 +623,8 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
 
 ## Demo 6: Use approved ClusterTemplate in separate Namespace
 
+> Expected completion time ~10-15 min
+
 1. Create Cluster in blue namespace (this will be ran as platform engineer)
     ```shell
     make apply-cluster-deployment-aws-dev1-0.0.1
@@ -640,12 +654,12 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
     KUBECONFIG="kubeconfigs/blue-aws-dev1.kubeconfig" kubectl get node
     ```
 
-    Example output:
+    Example output (username suffix will be present only if you specified the `USERNAME` variable at the [`General Setup`](#general-setup) step):
     ```
     NAME                           STATUS   ROLES           AGE    VERSION
-    blue-aws-dev1-cp-0             Ready    control-plane   10m    v1.31.2+k0s
-    blue-aws-dev1-md-kxgdb-bgmhw   Ready    <none>          2m4s   v1.31.2+k0s
-    blue-aws-dev1-md-kxgdb-jkcpc   Ready    <none>          2m5s   v1.31.2+k0s
+    blue-aws-dev1-<username>-cp-0             Ready    control-plane   10m    v1.31.2+k0s
+    blue-aws-dev1-<username>-md-kxgdb-bgmhw   Ready    <none>          2m4s   v1.31.2+k0s
+    blue-aws-dev1-<username>-md-kxgdb-jkcpc   Ready    <none>          2m5s   v1.31.2+k0s
     ```
 
 ## Demo 7: Test new ClusterTemplate as k0rdent Admin, then approve them in separate Namespace
@@ -654,6 +668,8 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
 
 ## Demo 9: Approve ServiceTemplate in separate Namespace
 
+> Expected completion time ~1-2 min
+
 1. Approve the `ServiceTemplate` into the blue namespace
     ```shell
     make approve-servicetemplatechain-ingress-nginx-4.11.0
@@ -661,7 +677,7 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
 
     Check the status of the `hmc` AccessManagement object:
     ```shell
-    PATH=$PATH:./bin kubectl -n k0rdent get AccessManagement hmc -o yaml
+    make get-yaml-accessmanagement
     ```
 
     In the status section you can find information about the `ServiceTemplateChain` that was approved to the target `blue` namespace:
@@ -693,6 +709,8 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
 
 ## Demo 10: Use ServiceTemplate in separate Namespace
 
+> Expected completion time ~5 min
+
 1. Apply ServiceTemplate to the cluster in blue namespace that was created in [Demo 6](#demo-6-use-approved-clustertemplate-in-separate-namespace) (this will be ran as platform engineer):
     ```shell
     make apply-cluster-deployment-aws-dev1-0.0.1-ingress
@@ -711,10 +729,10 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
     ingress-nginx-controller-86bd747cf9-ds56s   1/1     Running   0          34s
     ```
 
-    You can also check the services status of the `ClusterDeployment` of object in management cluster:
+    You can also check the services status of the `ClusterDeployment` of object in management cluster (this will be ran as platform engineer):
 
     ```shell
-    KUBECONFIG="certs/platform-engineer1/kubeconfig.yaml" PATH=$PATH:./bin kubectl -n blue get clusterdeployment.hmc.mirantis.com blue-aws-dev1 -o yaml
+    make get-yaml-clusterdeployment-aws-dev1
     ```
 
     The output under the `status.services` should contain information about successfully deployed ingress nginx service:
@@ -753,7 +771,7 @@ Be aware though that the cluster creation takes around 10-15mins, so depending o
 
     You can also find that the new `ClusterDeployment` from the `blue` namespace appears in the `MultiClusterService` object status:
     ```shell
-    PATH=$PATH:./bin kubectl get multiclusterservice global-kyverno -o yaml
+    make get-yaml-milticlasterservice-global-kyverno
     ```
 
     In the output you can find information about clusters where the service is deployed:
