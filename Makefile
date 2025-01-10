@@ -16,6 +16,7 @@ KIND_CLUSTER_NAME ?= k0rdent-management-local
 KIND_KUBECTL_CONTEXT = kind-$(KIND_CLUSTER_NAME)
 
 OPENSSL_DOCKER_IMAGE ?= alpine/openssl:3.3.2
+KUBECTL_VERSION ?= 1.32.0
 
 AWS_REGION ?= us-west-2
 
@@ -66,7 +67,7 @@ HELM_VERSION ?= v3.15.1
 YQ ?= PATH=$(LOCALBIN):$(PATH) yq
 YQ_VERSION ?= v4.44.6
 
-KUBECTL ?= PATH=$(LOCALBIN):$(PATH) kubectl
+KUBECTL ?= docker run -e KUBERNETES_SERVICE_HOST=kind --rm --network=host --name kubectl -v ~/.kube/config:/.kube/config bitnami/kubectl:$(KUBECTL_VERSION)
 
 DOCKER_VERSION ?= 27.4.1
 
