@@ -37,7 +37,7 @@ Tools needed to run this demo are
 - Git
 - make
 
-If you're unsure about whether your system is supported and whether all tools are installed correctly, we provide a script that helps you verify this questions. 
+If you're unsure about whether your system is supported and whether all tools are installed correctly, we provide a script that helps you answer this questions. 
 Follow these steps to download and run the script to check your setup.
 
 1. Ensure you have a Bash-compatible shell (Linux, macOS, or WSL on Windows).
