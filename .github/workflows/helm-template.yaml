@@ -1,0 +1,24 @@
+---
+name: Verify templates
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Verify templates
+        run: find templates/cluster -type d -depth 1 -exec helm template {} > /dev/null \;
