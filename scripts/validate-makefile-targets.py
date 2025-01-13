@@ -10,7 +10,7 @@ def run_make_target(target: str) -> bool:
         print(f"Make command for target '{target}' completed successfully.")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"Make command for target '{target}' failed with error:")
+        print(f"Make command for target '{target}' failed.")
         return False
 
 def read_markdown_file(filename: str):
@@ -22,18 +22,22 @@ def extract_shell_code_blocks(markdown_text: str) -> None:
     """Extracts 'shell' code blocks from the given markdown text."""
     md = MarkdownIt()
     tokens = md.parse(markdown_text)
-    
+
+    valid_targets = True
     for token in tokens:
         if token.type == 'fence' and token.info == 'shell':
-            check_code_block(token.content.strip())
+            if not check_code_block(token.content.strip()):
+                valid_targets = False
+    return valid_targets
 
 def check_code_block(code: str) -> bool:
     """Checks for each line of the codeblock if it is a make command. For each found make command, a check is performed."""
-    found_errors = False
+    targets_valid = True
     for line in code.splitlines():
         if line.strip().startswith("make "):
             if not run_make_target(line.strip()[5:]):
-                found_errors = True
+                targets_valid = False
+    return targets_valid
 
 def main() -> None:
     markdown_text = read_markdown_file('README.md')
