@@ -6,7 +6,7 @@ on:
   pull_request: {}
 
 jobs:
-  deploy:
+  validate-makefile:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,7 +17,7 @@ jobs:
         with:
           cache: 'pip'
 
-      - name: "Install depenedencies"
+      - name: "Install dependencies"
         run: pip install -r scripts/requirements.txt
 
       - name: Validate Makefile targets
