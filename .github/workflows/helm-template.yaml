@@ -22,4 +22,4 @@ jobs:
 
       - name: Verify templates
         run: |
-          find templates/cluster -type d -depth 1 -exec helm template {} > /dev/null \;
+          find templates/cluster -maxdepth 1 -mindepth 1 -type d -exec helm template {} > /dev/null \;
