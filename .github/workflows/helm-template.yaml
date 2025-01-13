@@ -21,4 +21,4 @@ jobs:
         uses: azure/setup-helm@v4
 
       - name: Verify templates
-        run: find templates/cluster -type d -depth 1 -exec helm template {} > /dev/null \;
+        run: "find templates/cluster -type d -depth 1 -exec helm template {} > /dev/null \;"
